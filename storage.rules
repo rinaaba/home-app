@@ -1,0 +1,20 @@
+rules_version = '2';
+
+// Same family allow-list as Firestore (config/access → emails).
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isFamily() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower()
+           in firestore.get(/databases/(default)/documents/config/access).data.emails;
+    }
+
+    match /{allPaths=**} {
+      allow read, delete: if isFamily();
+      allow create, update: if isFamily()
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

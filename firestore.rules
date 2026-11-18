@@ -1,0 +1,18 @@
+rules_version = '2';
+
+// Only people whose email is listed in the Firestore document config/access (field "emails")
+// can read or write anything. No emails are stored in this file, so the repo can be public.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isFamily() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower()
+           in get(/databases/$(database)/documents/config/access).data.emails;
+    }
+
+    match /{document=**} {
+      allow read, write: if isFamily();
+    }
+  }
+}
