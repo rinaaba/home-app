@@ -1,18 +1,64 @@
 rules_version = '2';
 
-// Only people whose email is listed in the Firestore document config/access (field "emails")
-// can read or write anything. No emails are stored in this file, so the repo can be public.
+// Who can use the app at all: emails on the access list (config/access → emails, edited in the Firebase console),
+// plus anyone a family has invited (invites/{email}).
+// Each family's things live under families/{familyId}/..., visible only to that family's members.
+// No emails are stored in this file, so the repo can be public.
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isFamily() {
-      return request.auth != null
-        && request.auth.token.email_verified == true
-        && request.auth.token.email.lower()
-           in get(/databases/$(database)/documents/config/access).data.emails;
+    function myEmail() {
+      return request.auth.token.email.lower();
+    }
+    function signedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    function allowed() {
+      return signedIn() && (
+        myEmail() in get(/databases/$(database)/documents/config/access).data.emails
+        || exists(/databases/$(database)/documents/invites/$(myEmail()))
+      );
+    }
+    function isMember(familyId) {
+      return myEmail() in get(/databases/$(database)/documents/families/$(familyId)).data.members;
     }
 
-    match /{document=**} {
-      allow read, write: if isFamily();
+    // The access list: readable (that's how the app checks you're allowed in), changed only in the console.
+    match /config/access {
+      allow read: if allowed();
     }
+
+    match /families/{familyId} {
+      allow read: if allowed() && myEmail() in resource.data.members;
+      // You can create a family only with yourself in it.
+      allow create: if allowed() && myEmail() in request.resource.data.members;
+      // Members can rename, invite and remove (including leaving).
+      allow update: if allowed() && myEmail() in resource.data.members;
+
+      // Everything inside a family (homes, items, people, and future sections).
+      match /{document=**} {
+        allow read, write: if allowed() && isMember(familyId);
+      }
+    }
+
+    function onAccessList() {
+      return signedIn() && myEmail() in get(/databases/$(database)/documents/config/access).data.emails;
+    }
+
+    // Invites. familyId '' = a friend invited to make their own family (only people on the access list can do this);
+    // otherwise an invite to join that family (any member can do this).
+    match /invites/{email} {
+      allow read: if signedIn() && myEmail() == email;
+      allow create, update: if allowed() && (
+        (request.resource.data.familyId == '' && onAccessList())
+        || (request.resource.data.familyId != '' && isMember(request.resource.data.familyId))
+      );
+      allow delete: if allowed() && resource.data.familyId != '' && isMember(resource.data.familyId);
+    }
+
+    // Data from before families existed (only the original family can see it).
+    // The app moves it into a family once, then deletes it.
+    match /homes/{id} { allow read, delete: if onAccessList(); }
+    match /items/{id} { allow read, delete: if onAccessList(); }
+    match /config/people { allow read, delete: if onAccessList(); }
   }
 }

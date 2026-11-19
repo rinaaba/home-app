@@ -231,6 +231,20 @@ code { font-family: var(--mono); background: var(--card); padding: 1px 6px; bord
 .square-btn.small { width: 36px; height: 36px; font-size: 1rem; color: var(--muted); }
 .square-btn:disabled { opacity: 0.35; cursor: default; }
 
+/* Settings */
+.start-card { text-align: center; padding: 32px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.start-card h2 { margin: 0; }
+.settings-section { margin-bottom: 28px; }
+.settings-section > h2 { margin-top: 8px; }
+.inline-field { display: flex; gap: 8px; }
+.inline-field input { flex: 1; min-width: 0; }
+.member-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
+.member-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.member-email { overflow-wrap: anywhere; }
+.app-link { display: flex; align-items: center; justify-content: center; gap: 8px; overflow-wrap: anywhere; }
+.welcome input { width: 100%; min-height: 48px; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--input); color: var(--text); font: inherit; }
+.welcome .btn { width: 100%; }
+
 /* Item detail */
 .item-layout { display: grid; gap: 20px; }
 @media (min-width: 800px) { .item-layout { grid-template-columns: minmax(300px, 1fr) 1fr; align-items: start; } }

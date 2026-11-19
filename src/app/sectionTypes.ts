@@ -13,4 +13,6 @@ export interface AppSection {
   path: string;
   /** Renders the section's own pages (it can use nested <Routes>). */
   Component: ComponentType;
+  /** Optional: this section's part of the Settings page. */
+  Settings?: ComponentType;
 }

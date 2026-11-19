@@ -26,11 +26,6 @@ export const TAXONOMY: Record<string, string[]> = {
 export const CATEGORIES = Object.keys(TAXONOMY);
 
 
-export const DEFAULT_HOMES = [
-  { id: 'tel-aviv', name: 'Tel Aviv', location: 'Israel', sortOrder: 1 },
-  { id: 'evia', name: 'Evia', location: 'Greece', sortOrder: 2 },
-  { id: 'deal', name: 'Deal', location: 'New Jersey, USA', sortOrder: 3 },
-];
 
 /** Shown on the color tile of items without a picture. */
 export const CATEGORY_ICONS: Record<string, string> = {

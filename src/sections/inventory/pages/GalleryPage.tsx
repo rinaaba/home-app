@@ -91,6 +91,12 @@ export function GalleryPage() {
 
       {loading ? (
         <Spinner label="Loading items" />
+      ) : homes.length === 0 ? (
+        <div className="card start-card">
+          <h2>Welcome! Start by adding your homes</h2>
+          <p className="meta">For example your main home and a holiday home. Then add your things to each one.</p>
+          <Link to="/settings" className="btn primary big">Add homes</Link>
+        </div>
       ) : (
         <>
           <div className="count-row">
@@ -98,7 +104,7 @@ export function GalleryPage() {
               {sorted.length} {sorted.length === 1 ? 'item' : 'items'}
               {q ? ` matching “${q}”` : home ? ` in ${homeName(home)}` : ''}
             </p>
-            <Link to="homes" className="link-btn small">homes and people</Link>
+            <Link to="/settings" className="link-btn small">homes and people</Link>
           </div>
           <div className="grid">
             {!q && (

@@ -1,18 +1,18 @@
 rules_version = '2';
 
-// Same family allow-list as Firestore (config/access → emails).
+// Pictures (paid plan only) live under families/{familyId}/..., visible only to that family's members.
 service firebase.storage {
   match /b/{bucket}/o {
-    function isFamily() {
+    function isMember(familyId) {
       return request.auth != null
         && request.auth.token.email_verified == true
         && request.auth.token.email.lower()
-           in firestore.get(/databases/(default)/documents/config/access).data.emails;
+           in firestore.get(/databases/(default)/documents/families/$(familyId)).data.members;
     }
 
-    match /{allPaths=**} {
-      allow read, delete: if isFamily();
-      allow create, update: if isFamily()
+    match /families/{familyId}/{allPaths=**} {
+      allow read, delete: if isMember(familyId);
+      allow create, update: if isMember(familyId)
         && request.resource.size < 10 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
     }

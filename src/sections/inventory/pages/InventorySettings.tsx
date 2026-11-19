@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Icons } from '../../../core/ui/icons';
 import { useInventory } from '../InventoryContext';
 import { addHome, updateHome } from '../data/homes';
@@ -108,7 +107,8 @@ function People() {
   );
 }
 
-export function HomesPage() {
+/** Inventory's part of the Settings page: homes and people. */
+export function InventorySettings() {
   const { homes, items } = useInventory();
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
@@ -135,11 +135,7 @@ export function HomesPage() {
   };
 
   return (
-    <div className="page narrow">
-      <div className="page-head">
-        <Link to=".." className="link-btn">← Back</Link>
-      </div>
-      <h1>Homes and people</h1>
+    <section className="settings-section">
       <h2>Homes</h2>
       <p className="meta">The first home is listed first and is picked for new items. Use the arrows to change the order.</p>
       <ul className="card-list">
@@ -186,6 +182,6 @@ export function HomesPage() {
           )}
         </>
       )}
-    </div>
+    </section>
   );
 }

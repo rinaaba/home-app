@@ -2,6 +2,7 @@ import { HashRouter } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../core/auth/AuthProvider';
 import { Spinner } from '../core/ui/Spinner';
 import { Shell } from './Shell';
+import { FamilyProvider } from '../core/family/FamilyProvider';
 
 function Gate() {
   const { user, loading, access, signIn, signOut } = useAuth();
@@ -46,9 +47,11 @@ function Gate() {
   }
 
   return (
-    <HashRouter>
-      <Shell />
-    </HashRouter>
+    <FamilyProvider>
+      <HashRouter>
+        <Shell />
+      </HashRouter>
+    </FamilyProvider>
   );
 }
 

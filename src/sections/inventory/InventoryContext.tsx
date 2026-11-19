@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { seedHomesIfEmpty, subscribeHomes } from './data/homes';
+import { subscribeHomes } from './data/homes';
 import { subscribeItems } from './data/items';
 import { subscribePeople } from './data/people';
 import type { Home, Item } from './types';
@@ -29,7 +29,6 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   const [people, setPeople] = useState<string[]>([]);
 
   useEffect(() => {
-    seedHomesIfEmpty().catch((e) => setError(e.message));
     const offHomes = subscribeHomes(setHomes, (e) => setError(e.message));
     const offItems = subscribeItems(setItems, (e) => setError(e.message));
     const offPeople = subscribePeople(setPeople, (e) => setError(e.message));

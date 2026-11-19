@@ -183,6 +183,10 @@ export function AddItemPage() {
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { onFiles(e.target.files); e.target.value = ''; }} />
       <input ref={libraryRef} type="file" accept="image/*,.heic,.heif" multiple hidden onChange={(e) => { onFiles(e.target.files); e.target.value = ''; }} />
 
+      {activeHomes.length === 0 && (
+        <p className="note">First add a home in <Link to="/settings">settings</Link>, so your things have somewhere to go.</p>
+      )}
+
       {step === 'pick' && (
         <div className="pick">
           <button type="button" className="btn primary huge" onClick={() => cameraRef.current?.click()}>📷 Take a photo</button>

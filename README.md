@@ -6,7 +6,8 @@ A family home app. Version 1 has one section: **Inventory** — what we own, and
 👉 **First time? Follow [docs/SETUP.md](docs/SETUP.md).** Ideas for later: [docs/BACKLOG.md](docs/BACKLOG.md).
 
 ## What it does
-- Sign in with Google (only emails on the family list get in), shared data for everyone in the family
+- Sign in with Google. Each family has its own private space (homes, people, items); members invite each other in Settings
+- People on the app's access list can invite friends, who get their own separate space
 - Gallery of items, filter by home, category, sub-category
 - Search across all homes ("where is the blender?")
 - Quick add: take a photo → AI guesses name, category, sub-category, color and notes → you confirm
@@ -51,16 +52,19 @@ docs/SETUP.md                    step-by-step setup
 ```
 
 ## Data
-- `config/access` — `{ emails: [...] }`: who may use the app
-- `homes/{id}` — `name, location, archived, sortOrder`
-- `config/people` — `{ owners: [...] }`: names items can belong to (kept here, not in the code, so they stay private)
-- `items/{id}` — `name, homeId, category, subcategory, color, colorHex, owner, notes, image, imageKind (ai | photo), imageStatus, createdBy, createdAt, updatedAt`
+- `config/access` — `{ emails: [...] }`: the app's owners (edited in the Firebase console); they can invite friends
+- `invites/{email}` — `{ familyId }`: lets an invited person sign in ('' = a friend who makes their own family)
+- `families/{id}` — `{ name, members: [emails] }`; everything below lives inside `families/{id}/...`
+  - `homes/{id}` — `name, location, archived, sortOrder`
+  - `config/people` — `{ owners: [...] }`: names items can belong to (kept here, not in the code, so they stay private)
+  - `items/{id}` — `name, homeId, category, subcategory, color, colorHex, owner, notes, image, imageKind (ai | photo), imageStatus, createdBy, createdAt, updatedAt`
 - Pictures (one small image per item, max 480px): free plan — stored inside the item document; paid plan — Storage `items/{id}/image_*.jpg` (setting: `photoStorage` in `config.ts`)
 
 ## Adding a section later
 1. Create `src/sections/<name>/index.tsx` that exports an `AppSection` (id, title, icon, path, Component).
 2. Add it to `src/app/sections.ts`. Navigation appears automatically once there are two or more sections.
-3. Give it its own Firestore collections (e.g. `lists`, `tasks`). The security rules already cover them.
+3. Keep its data inside the family with `fcol('lists')` / `fdoc(...)` from `src/core/family/scope.ts`. The security rules already cover them.
+4. Optional: give it a `Settings` component; it appears on the Settings page.
 
 ## Running locally (optional, for developers)
 ```

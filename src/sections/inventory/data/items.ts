@@ -1,11 +1,11 @@
 import {
-  collection, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc, updateDoc, type DocumentData,
+  deleteDoc, doc, onSnapshot, serverTimestamp, setDoc, updateDoc, type DocumentData,
 } from 'firebase/firestore';
-import { db } from '../../../core/firebase/app';
+import { currentFamily, fcol } from '../../../core/family/scope';
 import { deleteImage, saveImage } from '../../../core/images/imageStore';
 import type { Item, ItemDetails, StoredImage } from '../types';
 
-const itemsCol = collection(db, 'items');
+const itemsCol = () => fcol('items');
 
 function fromDoc(id: string, d: DocumentData): Item {
   return {
@@ -31,23 +31,23 @@ function fromDoc(id: string, d: DocumentData): Item {
 
 export function subscribeItems(cb: (items: Item[]) => void, onError: (e: Error) => void) {
   return onSnapshot(
-    itemsCol,
+    itemsCol(),
     (snap) => cb(snap.docs.map((d) => fromDoc(d.id, d.data()))),
     onError,
   );
 }
 
 export function newItemId() {
-  return doc(itemsCol).id;
+  return doc(itemsCol()).id;
 }
 
 export function saveItemImage(itemId: string, blob: Blob): Promise<StoredImage> {
-  return saveImage(`items/${itemId}/image`, blob);
+  return saveImage(`families/${currentFamily()}/items/${itemId}/image`, blob);
 }
 
 /** `fallback` is a low-res copy of the photo, shown until (or instead of) the AI picture. */
 export async function createItem(id: string, details: ItemDetails, fallback: StoredImage | null, createdBy: string) {
-  await setDoc(doc(itemsCol, id), {
+  await setDoc(doc(itemsCol(), id), {
     ...details,
     image: fallback,
     imageKind: fallback ? 'photo' : null,
@@ -61,7 +61,7 @@ export async function createItem(id: string, details: ItemDetails, fallback: Sto
 }
 
 export function updateItem(id: string, changes: Partial<Omit<Item, 'id' | 'createdAt'>> | Record<string, unknown>) {
-  return updateDoc(doc(itemsCol, id), { ...changes, updatedAt: serverTimestamp() });
+  return updateDoc(doc(itemsCol(), id), { ...changes, updatedAt: serverTimestamp() });
 }
 
 export function moveItem(id: string, homeId: string) {
@@ -74,6 +74,6 @@ export async function removeItemImage(item: Item) {
 }
 
 export async function deleteItem(item: Item) {
-  await deleteDoc(doc(itemsCol, item.id));
+  await deleteDoc(doc(itemsCol(), item.id));
   if (item.image) await deleteImage(item.image);
 }

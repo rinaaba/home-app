@@ -1,4 +1,5 @@
-import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
+import { Link, Navigate, NavLink, Route, Routes } from 'react-router-dom';
+import { SettingsPage } from './SettingsPage';
 import { useAuth } from '../core/auth/AuthProvider';
 import { Icons } from '../core/ui/icons';
 import { useTheme } from '../core/ui/theme';
@@ -20,9 +21,12 @@ export function Shell() {
             signed in as {firstName || user?.email} · <button type="button" className="link-btn" onClick={signOut}>sign out</button>
           </div>
         </div>
-        <button type="button" className="square-btn" onClick={toggle} aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}>
-          {theme === 'dark' ? <Icons.sun /> : <Icons.moon />}
-        </button>
+        <div className="row">
+          <button type="button" className="square-btn" onClick={toggle} aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}>
+            {theme === 'dark' ? <Icons.sun /> : <Icons.moon />}
+          </button>
+          <Link to="/settings" className="square-btn" aria-label="Settings"><Icons.gear /></Link>
+        </div>
       </header>
 
       {showNav && (
@@ -41,6 +45,7 @@ export function Shell() {
           {sections.map((s) => (
             <Route key={s.id} path={`/${s.path}/*`} element={<s.Component />} />
           ))}
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to={`/${sections[0].path}`} replace />} />
         </Routes>
       </main>

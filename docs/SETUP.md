@@ -42,7 +42,7 @@ console.firebase.google.com → **Create a project** → name it → Analytics *
    - Field `emails`, type **array**, with two **string** values: your Gmail and Or's Gmail, **all lowercase**
    - **Save**
 
-   ➜ Only emails on this list can open the app.
+   ➜ The people on this list own the app. Everyone else gets in by invitation, from Settings (⚙) in the app.
 
 ### Step 8. Turn on the AI
 1. Left menu: **Build → AI Logic** (sometimes under "AI") → **Get started**.
