@@ -23,7 +23,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   const [picked, setPicked] = useState(readPick);
   const select = (id: string) => { try { localStorage.setItem(PICK_KEY, id); } catch { /* ignore */ } setPicked(id); };
 
-  useEffect(() => subscribeMyFamilies(email, setFamilies, (e) => setError(e.message)), [email]);
+  useEffect(() => subscribeMyFamilies(email, setFamilies, (e) => setError(`Step: finding your family. ${e.message}`)), [email]);
 
   // No family yet: first check for data saved before families existed, and move it.
   useEffect(() => {
@@ -31,7 +31,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     setTriedMigration(true);
     setMigrating(true);
     migrateLegacyData()
-      .catch((e) => setError(e.message))
+      .catch((e) => setError(`Step: moving old data. ${e.message}`))
       .finally(() => setMigrating(false));
   }, [families, triedMigration]);
 
@@ -39,7 +39,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   const family = families?.find((f) => f.id === picked) ?? families?.find((f) => f.id === 'main') ?? families?.[0] ?? null;
   if (family) setCurrentFamily(family.id);
 
-  if (error) return <div className="center-page"><div className="card signin"><h1>Something went wrong</h1><p className="error">{error}</p><button type="button" className="btn" onClick={() => location.reload()}>Reload</button></div></div>;
+  if (error) return <div className="center-page"><div className="card signin"><h1>Something went wrong</h1><p className="error">{error}</p><p className="meta">Signed in as {email}</p><button type="button" className="btn" onClick={() => location.reload()}>Reload</button></div></div>;
   if (families === null || migrating || (!family && !triedMigration)) {
     return <div className="center-page"><Spinner label={migrating ? 'Moving your things into your family space…' : 'Loading'} /></div>;
   }
@@ -51,7 +51,7 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
       try {
         await createFamily(name.trim(), email);
       } catch (e) {
-        setError((e as Error).message);
+        setError(`Step: creating your family. ${(e as Error).message}`);
       }
     };
     return (

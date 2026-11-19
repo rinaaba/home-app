@@ -29,9 +29,9 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   const [people, setPeople] = useState<string[]>([]);
 
   useEffect(() => {
-    const offHomes = subscribeHomes(setHomes, (e) => setError(e.message));
-    const offItems = subscribeItems(setItems, (e) => setError(e.message));
-    const offPeople = subscribePeople(setPeople, (e) => setError(e.message));
+    const offHomes = subscribeHomes(setHomes, (e) => setError(`loading homes: ${e.message}`));
+    const offItems = subscribeItems(setItems, (e) => setError(`loading items: ${e.message}`));
+    const offPeople = subscribePeople(setPeople, (e) => setError(`loading people: ${e.message}`));
     return () => { offHomes(); offItems(); offPeople(); };
   }, []);
 
