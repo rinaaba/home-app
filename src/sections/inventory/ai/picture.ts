@@ -1,5 +1,5 @@
 import { serverTimestamp } from 'firebase/firestore';
-import { generateImage } from '../../../core/ai/gemini';
+import { describeAiError, generateImage } from '../../../core/ai/gemini';
 import { deleteImage, loadImageBlob } from '../../../core/images/imageStore';
 import { resizeImage } from '../../../core/images/resize';
 import { saveItemImage, updateItem } from '../data/items';
@@ -27,7 +27,7 @@ export async function makeItemPicture(itemId: string, name: string, photo: Blob,
     if (previous) await deleteImage(previous); // the photo copy isn't needed anymore
   } catch (err) {
     console.error('AI picture failed', err);
-    await updateItem(itemId, { imageStatus: 'failed', imageError: friendlyError(err) }).catch(() => undefined);
+    await updateItem(itemId, { imageStatus: 'failed', imageError: describeAiError(err) }).catch(() => undefined);
   }
 }
 
@@ -43,14 +43,6 @@ export function isStuck(item: Item) {
   return Date.now() - item.imageRequestedAt.toMillis() > 3 * 60 * 1000;
 }
 
-function friendlyError(err: unknown) {
-  const msg = String((err as Error)?.message ?? err);
-  const lower = msg.toLowerCase();
-  if (['quota', 'billing', '429', 'free tier', 'resource_exhausted'].some((w) => lower.includes(w))) {
-    return 'AI pictures need the pay-as-you-go plan (or the daily free limit was reached).';
-  }
-  return msg.slice(0, 200);
-}
 
 // Make AI pictures one at a time, so adding many items at once doesn't hit the AI's rate limit.
 let pictureQueue: Promise<void> = Promise.resolve();

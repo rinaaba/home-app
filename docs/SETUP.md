@@ -51,6 +51,9 @@ console.firebase.google.com → **Create a project** → name it → Analytics *
 Note: on the free plan, Google may use what's sent to the AI (your item photos) to improve its products.
 On the paid plan it doesn't.
 
+**If adding a photo says the AI is blocked by App Check:** open Firebase → **Security → App Check** → **APIs** tab →
+**Firebase AI Logic** → **Unenforce**. (App Check can be set up properly later; see the backlog.)
+
 ---
 
 ## Part C — Put the website online

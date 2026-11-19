@@ -9,12 +9,12 @@ export function HomeSwitch({ homes, value, onChange, allowAll }: {
   return (
     <div className="segmented" role="tablist">
       {allowAll && (
-        <button role="tab" aria-selected={!value} className={`seg ${!value ? 'on' : ''}`} onClick={() => onChange('')}>
+        <button type="button" role="tab" aria-selected={!value} className={`seg ${!value ? 'on' : ''}`} onClick={() => onChange('')}>
           <Icons.all /> <span>All</span>
         </button>
       )}
       {homes.map((h) => (
-        <button
+        <button type="button"
           key={h.id}
           role="tab"
           aria-selected={value === h.id}

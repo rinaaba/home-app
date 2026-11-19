@@ -1,9 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { seedHomesIfEmpty, subscribeHomes } from './data/homes';
 import { subscribeItems } from './data/items';
+import { subscribePeople } from './data/people';
 import type { Home, Item } from './types';
-import { DEFAULT_ROOMS } from './taxonomy';
-import { useAuth } from '../../core/auth/AuthProvider';
 
 interface InventoryValue {
   homes: Home[];
@@ -12,8 +11,10 @@ interface InventoryValue {
   loading: boolean;
   error: string;
   homeName: (id: string) => string;
-  roomsFor: (homeId?: string) => string[];
+  /** Names items can belong to, in the order they were added. */
   owners: string[];
+  /** The owner new items start with. */
+  defaultOwner: string;
   categoriesInUse: string[];
 }
 
@@ -22,16 +23,17 @@ const Ctx = createContext<InventoryValue | null>(null);
 const uniqSorted = (list: string[]) => [...new Set(list.filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
 export function InventoryProvider({ children }: { children: ReactNode }) {
-  const { firstName } = useAuth();
   const [homes, setHomes] = useState<Home[] | null>(null);
   const [items, setItems] = useState<Item[] | null>(null);
   const [error, setError] = useState('');
+  const [people, setPeople] = useState<string[]>([]);
 
   useEffect(() => {
     seedHomesIfEmpty().catch((e) => setError(e.message));
     const offHomes = subscribeHomes(setHomes, (e) => setError(e.message));
     const offItems = subscribeItems(setItems, (e) => setError(e.message));
-    return () => { offHomes(); offItems(); };
+    const offPeople = subscribePeople(setPeople, (e) => setError(e.message));
+    return () => { offHomes(); offItems(); offPeople(); };
   }, []);
 
   const value = useMemo<InventoryValue>(() => {
@@ -45,12 +47,11 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       loading: homes === null || items === null,
       error,
       homeName: (id) => byId.get(id)?.name ?? 'Unknown home',
-      roomsFor: (homeId) =>
-        uniqSorted([...DEFAULT_ROOMS, ...it.filter((x) => !homeId || x.homeId === homeId).map((x) => x.room)]),
-      owners: uniqSorted(['Shared', firstName, ...it.map((x) => x.owner)]),
+      owners: people.length ? people : ['All'],
+      defaultOwner: people.includes('All') ? 'All' : people[0] ?? 'All',
       categoriesInUse: uniqSorted(it.map((x) => x.category)),
     };
-  }, [homes, items, error, firstName]);
+  }, [homes, items, error, people]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

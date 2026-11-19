@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Icons } from '../../../core/ui/icons';
 import { useInventory } from '../InventoryContext';
 import { addHome, updateHome } from '../data/homes';
+import { savePeople } from '../data/people';
 import { ACCENTS, HOME_ICONS, homeStyle } from '../homeStyle';
 import type { Home } from '../types';
 
@@ -31,19 +32,19 @@ function HomeRow({ home, count }: { home: Home; count: number }) {
           <div className="label">Color</div>
           <div className="pickers">
             {ACCENTS.map((a) => (
-              <button key={a} className={`swatch-btn accent-${a} ${a === accent ? 'on' : ''}`} onClick={() => setAccent(a)} aria-label={a} />
+              <button type="button" key={a} className={`swatch-btn accent-${a} ${a === accent ? 'on' : ''}`} onClick={() => setAccent(a)} aria-label={a} />
             ))}
           </div>
           <div className="label">Icon</div>
           <div className="pickers">
             {HOME_ICONS.map((i) => {
               const I = Icons[i];
-              return <button key={i} className={`square-btn ${i === icon ? 'on' : ''}`} onClick={() => setIcon(i)} aria-label={i}><I /></button>;
+              return <button type="button" key={i} className={`square-btn ${i === icon ? 'on' : ''}`} onClick={() => setIcon(i)} aria-label={i}><I /></button>;
             })}
           </div>
           <div className="button-row">
-            <button className="btn primary grow" onClick={save}>Save</button>
-            <button className="square-btn" onClick={() => setEditing(false)} aria-label="Cancel"><Icons.close /></button>
+            <button type="button" className="btn primary grow" onClick={save}>Save</button>
+            <button type="button" className="square-btn" onClick={() => setEditing(false)} aria-label="Cancel"><Icons.close /></button>
           </div>
         </div>
       </li>
@@ -59,12 +60,45 @@ function HomeRow({ home, count }: { home: Home; count: number }) {
         <div className="meta">{[home.location, `${count} ${count === 1 ? 'item' : 'items'}`].filter(Boolean).join(' · ')}</div>
       </div>
       <div className="row">
-        <button className="btn small" onClick={() => setEditing(true)}>Edit</button>
-        <button className={`btn small ${home.archived ? '' : 'danger'}`} onClick={() => updateHome(home.id, { archived: !home.archived })}>
+        <button type="button" className="btn small" onClick={() => setEditing(true)}>Edit</button>
+        <button type="button" className={`btn small ${home.archived ? '' : 'danger'}`} onClick={() => updateHome(home.id, { archived: !home.archived })}>
           {home.archived ? 'Restore' : 'Archive'}
         </button>
       </div>
     </li>
+  );
+}
+
+/** The names items can belong to. Stored in the database (not in the code), so they stay private. */
+function People() {
+  const { owners } = useInventory();
+  const [name, setName] = useState('');
+  const add = async () => {
+    const n = name.trim();
+    if (!n || owners.includes(n)) return setName('');
+    await savePeople([...owners, n]);
+    setName('');
+  };
+  const remove = (n: string) => {
+    if (confirm(`Remove “${n}” from the list? Items that belong to ${n} keep that owner.`)) void savePeople(owners.filter((o) => o !== n));
+  };
+  return (
+    <>
+      <h2>People</h2>
+      <p className="meta">Who items can belong to. “All” is picked for new items.</p>
+      <div className="chips people">
+        {owners.map((o) => (
+          <span key={o} className="chip person">
+            {o}
+            <button type="button" className="chip-x" onClick={() => remove(o)} aria-label={`Remove ${o}`}><Icons.close /></button>
+          </span>
+        ))}
+      </div>
+      <form className="add-person" onSubmit={(e) => { e.preventDefault(); void add(); }}>
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Add a name, e.g. Kids" aria-label="Name" />
+        <button type="submit" className="btn primary" disabled={!name.trim()}>Add</button>
+      </form>
+    </>
   );
 }
 
@@ -92,7 +126,8 @@ export function HomesPage() {
       <div className="page-head">
         <Link to=".." className="link-btn">← Back</Link>
       </div>
-      <h1>Homes</h1>
+      <h1>Homes and people</h1>
+      <h2>Homes</h2>
       <ul className="card-list">
         {active.map((h) => <HomeRow key={h.id} home={h} count={countFor(h.id)} />)}
       </ul>
@@ -104,17 +139,19 @@ export function HomesPage() {
             <label>Location<input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Optional" /></label>
           </div>
           <div className="button-row">
-            <button className="btn primary grow" onClick={add} disabled={!name.trim()}>Add home</button>
-            <button className="square-btn" onClick={() => setAdding(false)} aria-label="Cancel"><Icons.close /></button>
+            <button type="button" className="btn primary grow" onClick={add} disabled={!name.trim()}>Add home</button>
+            <button type="button" className="square-btn" onClick={() => setAdding(false)} aria-label="Cancel"><Icons.close /></button>
           </div>
         </div>
       ) : (
-        <button className="add-card wide" onClick={() => setAdding(true)}><Icons.plus /><span>Add home</span></button>
+        <button type="button" className="add-card wide" onClick={() => setAdding(true)}><Icons.plus /><span>Add home</span></button>
       )}
+
+      <People />
 
       {archived.length > 0 && (
         <>
-          <button className="section-toggle" onClick={() => setShowArchived((s) => !s)}>
+          <button type="button" className="section-toggle" onClick={() => setShowArchived((s) => !s)}>
             <span className={`chev ${showArchived ? 'open' : ''}`}><Icons.chevron /></span>
             <span>Archived</span>
             <span className="pill-count">{archived.length}</span>

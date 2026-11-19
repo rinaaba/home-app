@@ -7,9 +7,9 @@ A family home app. Version 1 has one section: **Inventory** — what we own, and
 
 ## What it does
 - Sign in with Google (only emails on the family list get in), shared data for everyone in the family
-- Gallery of items, filter by home, room, category, sub-category
+- Gallery of items, filter by home, category, sub-category
 - Search across all homes ("where is the blender?")
-- Quick add: take a photo → AI guesses name, category, sub-category, color, room and notes → you confirm
+- Quick add: take a photo → AI guesses name, category, sub-category, color and notes → you confirm
 - AI turns the photo into one small, simple picture; the photo itself is never kept
 - Pictures are optional (switch it off for socks): items without one show a color tile
 - Move an item to another home, edit, delete
@@ -53,7 +53,8 @@ docs/SETUP.md                    step-by-step setup
 ## Data
 - `config/access` — `{ emails: [...] }`: who may use the app
 - `homes/{id}` — `name, location, archived, sortOrder`
-- `items/{id}` — `name, homeId, room, category, subcategory, color, colorHex, owner, notes, image, imageKind (ai | photo), imageStatus, createdBy, createdAt, updatedAt`
+- `config/people` — `{ owners: [...] }`: names items can belong to (kept here, not in the code, so they stay private)
+- `items/{id}` — `name, homeId, category, subcategory, color, colorHex, owner, notes, image, imageKind (ai | photo), imageStatus, createdBy, createdAt, updatedAt`
 - Pictures (one small image per item, max 480px): free plan — stored inside the item document; paid plan — Storage `items/{id}/image_*.jpg` (setting: `photoStorage` in `config.ts`)
 
 ## Adding a section later

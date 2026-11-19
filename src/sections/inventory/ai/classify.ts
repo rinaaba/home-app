@@ -1,5 +1,5 @@
 import { Schema } from 'firebase/ai';
-import { generateJson } from '../../../core/ai/gemini';
+import { generateJson, isRateLimited } from '../../../core/ai/gemini';
 import { TAXONOMY } from '../taxonomy';
 
 export interface Guess {
@@ -8,18 +8,16 @@ export interface Guess {
   subcategory: string;
   color: string;
   colorHex: string;
-  room: string;
   notes: string;
 }
 
 const schema = Schema.object({
   properties: {
-    name: Schema.string({ description: 'Short everyday name, sentence case, e.g. "Linen shirt" or "Blender"' }),
+    name: Schema.string({ description: 'Short everyday name, sentence case, e.g. "Linen shirt" or "Striped t-shirt"' }),
     category: Schema.string(),
     subcategory: Schema.string(),
     color: Schema.string({ description: 'Main color in plain words, sentence case, e.g. "Navy blue", "Black and white"' }),
     colorHex: Schema.string({ description: 'The main color as a hex code like #1f2a44' }),
-    room: Schema.string({ description: 'Most likely room it belongs in, or empty' }),
     notes: Schema.string({ description: 'Brand, size, material or other useful details visible in the photo. Short. Empty if none.' }),
   },
 });
@@ -39,10 +37,8 @@ Use sentence case for every value. Keep the name short (2-4 words) and don't rep
     try {
       g = await generateJson<Guess>(prompt, [photo], schema);
     } catch (err) {
-      const msg = String((err as Error)?.message ?? err).toLowerCase();
-      const rateLimited = ['429', 'quota', 'resource_exhausted', 'rate'].some((w) => msg.includes(w));
-      if (!rateLimited || attempt >= 4) throw err;
-      await new Promise((r) => setTimeout(r, attempt * 20_000));
+      if (!isRateLimited(err) || attempt >= 3) throw err;
+      await new Promise((r) => setTimeout(r, attempt * 15_000));
     }
   }
   return { ...g, colorHex: /^#[0-9a-f]{6}$/i.test(g.colorHex ?? '') ? g.colorHex : '' };

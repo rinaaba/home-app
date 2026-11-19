@@ -3,8 +3,10 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../core/auth/AuthProvider';
 import { resizeImage } from '../../../core/images/resize';
 import { Spinner } from '../../../core/ui/Spinner';
+import { useToast } from '../../../core/ui/toast';
 import { useInventory } from '../InventoryContext';
 import { classifyPhoto, type Guess } from '../ai/classify';
+import { describeAiError } from '../../../core/ai/gemini';
 import { queueItemPicture } from '../ai/picture';
 import { ItemForm } from '../components/ItemForm';
 import { createItem, newItemId, saveItemImage } from '../data/items';
@@ -21,15 +23,17 @@ interface Entry {
   photo?: Blob;
   preview?: string;
   guess?: Guess;
+  error?: string;
   status: 'waiting' | 'looking' | 'ready' | 'failed' | 'unreadable';
 }
 
-type Step = 'pick' | 'details' | 'done';
+type Step = 'pick' | 'details';
 
 export function AddItemPage() {
-  const { activeHomes, homes } = useInventory();
+  const { activeHomes, homes, defaultOwner } = useInventory();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
   const [params] = useSearchParams();
   const cameraRef = useRef<HTMLInputElement>(null);
   const libraryRef = useRef<HTMLInputElement>(null);
@@ -39,7 +43,7 @@ export function AddItemPage() {
     const wanted = params.get('home') || readLastHome();
     return activeHomes.find((h) => h.id === wanted)?.id ?? activeHomes[0]?.id ?? '';
   };
-  const blank = (): ItemDetails => ({ name: '', homeId: defaultHome(), room: '', category: '', subcategory: '', color: '', colorHex: '', owner: 'Shared', notes: '' });
+  const blank = (): ItemDetails => ({ name: '', homeId: defaultHome(), category: '', subcategory: '', color: '', colorHex: '', owner: defaultOwner, notes: '' });
 
   const [step, setStep] = useState<Step>('pick');
   const [queue, setQueue] = useState<Entry[]>([]);
@@ -83,7 +87,7 @@ export function AddItemPage() {
         if (runRef.current === run) patch(i, { guess, status: 'ready' });
       } catch (e) {
         console.error(e);
-        if (runRef.current === run) patch(i, { status: 'failed' });
+        if (runRef.current === run) patch(i, { status: 'failed', error: describeAiError(e) });
       }
     }
   };
@@ -110,8 +114,7 @@ export function AddItemPage() {
     setDetails((d) => ({
       ...blank(),
       homeId: d.homeId || defaultHome(),
-      owner: d.owner || 'Shared',
-      room: g?.room ?? '',
+      owner: d.owner || defaultOwner,
       ...(g && { name: g.name, category: g.category, subcategory: g.subcategory, color: g.color, colorHex: g.colorHex, notes: g.notes }),
     }));
     setKeepPicture(true);
@@ -119,9 +122,17 @@ export function AddItemPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, isReady, index, formFor]);
 
-  const next = () => {
+  /** All done: back to the gallery with a short message. */
+  const finish = (names: string[]) => {
+    runRef.current++;
+    if (names.length === 1) toast(`Saved “${names[0]}”`);
+    else if (names.length > 1) toast(`Saved ${names.length} items`);
+    navigate('..');
+  };
+
+  const next = (names = savedNames) => {
     if (index + 1 < queue.length) setIndex(index + 1);
-    else setStep('done');
+    else finish(names);
     window.scrollTo({ top: 0 });
   };
 
@@ -132,14 +143,15 @@ export function AddItemPage() {
       const withPicture = current?.photo && keepPicture ? current.photo : null;
       // A low-res copy of the photo is shown until the AI picture is ready (or if it fails).
       const fallback = withPicture ? await saveItemImage(id, withPicture) : null;
-      const clean: ItemDetails = { ...details, name: details.name.trim(), room: details.room.trim(), color: details.color.trim(), owner: details.owner.trim(), notes: details.notes.trim() };
+      const clean: ItemDetails = { ...details, name: details.name.trim(), color: details.color.trim(), owner: details.owner.trim(), notes: details.notes.trim() };
       await createItem(id, clean, fallback, user?.displayName ?? user?.email ?? '');
       saveLastHome(clean.homeId);
       // The photo itself is never kept. The AI picture is made in the background.
       if (withPicture) queueItemPicture(id, clean.name, withPicture, fallback);
-      setSavedNames((n) => [...n, clean.name]);
-      if (queue.length) next();
-      else setStep('done');
+      const names = [...savedNames, clean.name];
+      setSavedNames(names);
+      if (queue.length) next(names);
+      else finish(names);
     } catch (e) {
       alert(`Couldn't save: ${(e as Error).message}`);
     } finally {
@@ -173,10 +185,10 @@ export function AddItemPage() {
 
       {step === 'pick' && (
         <div className="pick">
-          <button className="btn primary huge" onClick={() => cameraRef.current?.click()}>📷 Take a photo</button>
-          <button className="btn huge" onClick={() => libraryRef.current?.click()}>🖼️ Choose photos</button>
+          <button type="button" className="btn primary huge" onClick={() => cameraRef.current?.click()}>📷 Take a photo</button>
+          <button type="button" className="btn huge" onClick={() => libraryRef.current?.click()}>🖼️ Choose photos</button>
           <p className="muted center">You can choose many photos at once. The AI fills in each one and you check them one by one.</p>
-          <button className="btn link" onClick={() => { setQueue([]); setFormFor(-1); setStep('details'); }}>Add without a photo</button>
+          <button type="button" className="btn link" onClick={() => { setQueue([]); setFormFor(-1); setStep('details'); }}>Add without a photo</button>
         </div>
       )}
 
@@ -196,7 +208,7 @@ export function AddItemPage() {
           ) : current?.status === 'unreadable' ? (
             <p className="error">This photo couldn’t be opened. Skip it, or try saving it as a JPEG first.</p>
           ) : current?.status === 'failed' ? (
-            <p className="note">Couldn’t guess the details this time. Please fill them in.</p>
+            <p className="note">Couldn’t guess the details, so please fill them in.{current.error ? ` (${current.error})` : ''}</p>
           ) : current ? (
             <p className="note">These details were guessed from the photo. Check them and change anything that’s wrong.</p>
           ) : null}
@@ -223,26 +235,12 @@ export function AddItemPage() {
           )}
 
           <div className="row spread">
-            {many && <button className="btn" onClick={next} disabled={saving}>Skip this photo</button>}
-            <button className="btn link" onClick={startOver} disabled={saving}>{many ? 'Stop and start over' : 'Start over'}</button>
+            {many && <button type="button" className="btn" onClick={() => next()} disabled={saving}>Skip this photo</button>}
+            <button type="button" className="btn link" onClick={startOver} disabled={saving}>{many ? 'Stop and start over' : 'Start over'}</button>
           </div>
         </>
       )}
 
-      {step === 'done' && (
-        <div className="pick">
-          <p className="success">
-            {savedNames.length === 0
-              ? 'Nothing was saved.'
-              : savedNames.length === 1
-                ? `Saved “${savedNames[0]}”.`
-                : `Saved ${savedNames.length} items.`}
-            {savedNames.length > 0 && ' Simple pictures are being made and will appear over the next few minutes — keep the app open until they do.'}
-          </p>
-          <button className="btn primary huge" onClick={startOver}>Add more</button>
-          <button className="btn huge" onClick={() => navigate('..')}>Done</button>
-        </div>
-      )}
     </div>
   );
 }

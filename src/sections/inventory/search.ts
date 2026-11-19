@@ -9,7 +9,7 @@ export function searchItems(items: Item[], text: string, homeName: (id: string) 
   const words = normalize(text).replace(/[?!.,'"]/g, ' ').split(/\s+/).filter((w) => w && !STOP_WORDS.has(w));
   if (!words.length) return items;
   return items.filter((it) => {
-    const hay = normalize([it.name, it.color, it.category, it.subcategory, it.room, it.owner, it.notes, homeName(it.homeId)].join(' '));
+    const hay = normalize([it.name, it.color, it.category, it.subcategory, it.owner, it.notes, homeName(it.homeId)].join(' '));
     // Simple plural handling: "blenders" also finds "blender".
     return words.every((w) => hay.includes(w) || (w.length > 3 && w.endsWith('s') && hay.includes(w.slice(0, -1))));
   });

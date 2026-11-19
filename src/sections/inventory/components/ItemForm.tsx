@@ -1,5 +1,7 @@
 import { useId, type FormEvent } from 'react';
 import { useInventory } from '../InventoryContext';
+import { HomeSwitch } from './HomeSwitch';
+import { OwnerPicker } from './OwnerPicker';
 import { CATEGORIES, TAXONOMY } from '../taxonomy';
 import type { ItemDetails } from '../types';
 
@@ -13,7 +15,7 @@ interface Props {
 }
 
 export function ItemForm({ value, onChange, onSubmit, submitLabel, busy, disabled }: Props) {
-  const { activeHomes, homes, roomsFor, owners, categoriesInUse } = useInventory();
+  const { activeHomes, homes, owners, categoriesInUse } = useInventory();
   const id = useId();
   const set = <K extends keyof ItemDetails>(k: K, v: ItemDetails[K]) => onChange({ ...value, [k]: v });
 
@@ -33,24 +35,12 @@ export function ItemForm({ value, onChange, onSubmit, submitLabel, busy, disable
       <fieldset disabled={disabled || busy}>
         <label>
           Name
-          <input value={value.name} onChange={(e) => set('name', e.target.value)} required placeholder="e.g. Blender" />
+          <input value={value.name} onChange={(e) => set('name', e.target.value)} required placeholder="e.g. Striped t-shirt" />
         </label>
 
-        <div className="form-row">
-          <label>
-            Home
-            <select value={value.homeId} onChange={(e) => set('homeId', e.target.value)} required>
-              <option value="" disabled>Choose a home</option>
-              {(homeOptions.length ? homeOptions : activeHomes).map((h) => (
-                <option key={h.id} value={h.id}>{h.name}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Room
-            <input list={`${id}-rooms`} value={value.room} onChange={(e) => set('room', e.target.value)} placeholder="Optional" />
-            <datalist id={`${id}-rooms`}>{roomsFor(value.homeId).map((r) => <option key={r} value={r} />)}</datalist>
-          </label>
+        <div className="field">
+          <span className="label">Home</span>
+          <HomeSwitch homes={homeOptions.length ? homeOptions : activeHomes} value={value.homeId} onChange={(id) => set('homeId', id)} />
         </div>
 
         <div className="form-row">
@@ -66,8 +56,7 @@ export function ItemForm({ value, onChange, onSubmit, submitLabel, busy, disable
           </label>
         </div>
 
-        <div className="form-row">
-          <label>
+        <label>
             Color
             <div className="color-field">
               <input
@@ -79,12 +68,8 @@ export function ItemForm({ value, onChange, onSubmit, submitLabel, busy, disable
               <input value={value.color} onChange={(e) => set('color', e.target.value)} placeholder="e.g. Navy blue" />
             </div>
           </label>
-          <label>
-            Owner
-            <input list={`${id}-owners`} value={value.owner} onChange={(e) => set('owner', e.target.value)} placeholder="Who it belongs to" />
-            <datalist id={`${id}-owners`}>{owners.map((o) => <option key={o} value={o} />)}</datalist>
-          </label>
-        </div>
+
+        <OwnerPicker owners={owners} value={value.owner} onChange={(v) => set('owner', v)} />
 
 
         <label>

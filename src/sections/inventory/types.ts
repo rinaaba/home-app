@@ -27,7 +27,6 @@ export interface Item {
   id: string;
   name: string;
   homeId: string;
-  room: string;
   category: string;
   subcategory: string;
   /** Color in words, e.g. "Navy blue". */
@@ -50,5 +49,5 @@ export interface Item {
 /** The fields you fill in on the add/edit form. */
 export type ItemDetails = Pick<
   Item,
-  'name' | 'homeId' | 'room' | 'category' | 'subcategory' | 'color' | 'colorHex' | 'owner' | 'notes'
+  'name' | 'homeId' | 'category' | 'subcategory' | 'color' | 'colorHex' | 'owner' | 'notes'
 >;

@@ -45,7 +45,6 @@ export function ItemPage() {
 
   const rows: [string, string][] = [
     ['Home', homeName(item.homeId)],
-    ['Room', item.room],
     ['Category', item.category],
     ['Sub-category', item.subcategory],
     ['Color', item.color],
@@ -71,15 +70,15 @@ export function ItemPage() {
                 {item.imageStatus === 'failed' && item.imageError ? ` The AI picture didn’t work: ${item.imageError}` : ''}
               </span>
             )}
-            {canRetry && <button className="btn small" onClick={retry}>Try AI picture again</button>}
-            {item.image && !pending && <button className="btn small" onClick={removePicture}>Remove picture</button>}
+            {canRetry && <button type="button" className="btn small" onClick={retry}>Try AI picture again</button>}
+            {item.image && !pending && <button type="button" className="btn small" onClick={removePicture}>Remove picture</button>}
           </div>
         </div>
 
         <div className="item-info">
           <div className="eyebrow">
             <HomeIcon home={homes.find((h) => h.id === item.homeId)} />
-            {[homeName(item.homeId), item.room].filter(Boolean).join(' · ')}
+            {homeName(item.homeId)}
           </div>
           <h1>{item.name}</h1>
           <dl>
@@ -94,9 +93,9 @@ export function ItemPage() {
             ))}
           </dl>
           <div className="actions">
-            <button className="btn primary big" onClick={() => setMoving(true)}>Move to another home</button>
+            <button type="button" className="btn primary big" onClick={() => setMoving(true)}>Move to another home</button>
             <Link className="btn big" to="edit">Edit</Link>
-            <button className="btn danger" onClick={remove}>Delete</button>
+            <button type="button" className="btn danger" onClick={remove}>Delete</button>
           </div>
         </div>
       </div>

@@ -17,7 +17,7 @@ function Gate() {
           <img src="icons/icon.svg" alt="" width={72} height={72} />
           <h1>Home</h1>
           <p>Sign in to see your family's homes and things.</p>
-          <button className="btn primary big" onClick={() => signIn().catch((e) => alert(e.message))}>
+          <button type="button" className="btn primary big" onClick={() => signIn().catch((e) => alert(e.message))}>
             Sign in with Google
           </button>
         </div>
@@ -37,8 +37,8 @@ function Gate() {
             Add this email to <code>config/access → emails</code> in the Firebase console, then reload.
           </p>
           <div className="row">
-            <button className="btn" onClick={() => location.reload()}>Reload</button>
-            <button className="btn" onClick={signOut}>Use another account</button>
+            <button type="button" className="btn" onClick={() => location.reload()}>Reload</button>
+            <button type="button" className="btn" onClick={signOut}>Use another account</button>
           </div>
         </div>
       </div>

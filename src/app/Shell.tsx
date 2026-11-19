@@ -2,6 +2,7 @@ import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { useAuth } from '../core/auth/AuthProvider';
 import { Icons } from '../core/ui/icons';
 import { useTheme } from '../core/ui/theme';
+import { ToastProvider } from '../core/ui/toast';
 import { sections } from './sections';
 
 export function Shell() {
@@ -10,15 +11,16 @@ export function Shell() {
   const showNav = sections.length > 1;
 
   return (
+    <ToastProvider>
     <div className={`shell ${showNav ? 'has-nav' : ''}`}>
       <header className="topbar">
         <div>
           <div className="brand">Home</div>
           <div className="signed-in">
-            signed in as {firstName || user?.email} · <button className="link-btn" onClick={signOut}>sign out</button>
+            signed in as {firstName || user?.email} · <button type="button" className="link-btn" onClick={signOut}>sign out</button>
           </div>
         </div>
-        <button className="square-btn" onClick={toggle} aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}>
+        <button type="button" className="square-btn" onClick={toggle} aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}>
           {theme === 'dark' ? <Icons.sun /> : <Icons.moon />}
         </button>
       </header>
@@ -43,5 +45,6 @@ export function Shell() {
         </Routes>
       </main>
     </div>
+    </ToastProvider>
   );
 }

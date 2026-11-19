@@ -9,7 +9,7 @@ import type { Item, ItemDetails } from '../types';
 function EditForm({ item }: { item: Item }) {
   const navigate = useNavigate();
   const [details, setDetails] = useState<ItemDetails>({
-    name: item.name, homeId: item.homeId, room: item.room, category: item.category,
+    name: item.name, homeId: item.homeId, category: item.category,
     subcategory: item.subcategory, color: item.color, colorHex: item.colorHex, owner: item.owner, notes: item.notes,
   });
   const [busy, setBusy] = useState(false);

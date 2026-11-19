@@ -13,10 +13,9 @@ export function GalleryPage() {
   const [params, setParams] = useSearchParams();
   const q = params.get('q') ?? '';
   const home = params.get('home') ?? '';
-  const room = params.get('room') ?? '';
   const cat = params.get('cat') ?? '';
   const sub = params.get('sub') ?? '';
-  const [showFilters, setShowFilters] = useState(Boolean(room || cat || sub));
+  const [showFilters, setShowFilters] = useState(Boolean(cat || sub));
 
   const setParam = (key: string, value: string, reset: string[] = []) => {
     const next = new URLSearchParams(params);
@@ -32,10 +31,8 @@ export function GalleryPage() {
     () => items.filter((it) => (home ? it.homeId === home : !archivedIds.has(it.homeId))),
     [items, home, archivedIds],
   );
-  const rooms = [...new Set(inHome.map((i) => i.room).filter(Boolean))].sort();
-  const inRoom = room ? inHome.filter((i) => i.room === room) : inHome;
-  const cats = [...new Set(inRoom.map((i) => i.category).filter(Boolean))].sort();
-  const inCat = cat ? inRoom.filter((i) => i.category === cat) : inRoom;
+  const cats = [...new Set(inHome.map((i) => i.category).filter(Boolean))].sort();
+  const inCat = cat ? inHome.filter((i) => i.category === cat) : inHome;
   const subs = [...new Set(inCat.map((i) => i.subcategory).filter(Boolean))].sort();
   const filtered = sub ? inCat.filter((i) => i.subcategory === sub) : inCat;
 
@@ -43,7 +40,7 @@ export function GalleryPage() {
   const results = q ? searchItems(items, q, homeName) : filtered;
   const sorted = [...results].sort((a, b) => (b.createdAt?.toMillis() ?? Date.now()) - (a.createdAt?.toMillis() ?? Date.now()));
 
-  const filterCount = [room, cat, sub].filter(Boolean).length;
+  const filterCount = [cat, sub].filter(Boolean).length;
   const accent = homeStyle(homes.find((h) => h.id === home)).accent;
   const addLink = home ? `add?home=${home}` : 'add';
 
@@ -51,7 +48,7 @@ export function GalleryPage() {
     <div className={`page gallery-page accent-${accent}`}>
       {!q && (
         <div className="home-row-top">
-          <HomeSwitch homes={activeHomes} value={home} onChange={(id) => setParam('home', id, ['room'])} allowAll />
+          <HomeSwitch homes={activeHomes} value={home} onChange={(id) => setParam('home', id, ['cat', 'sub'])} allowAll />
         </div>
       )}
 
@@ -61,11 +58,11 @@ export function GalleryPage() {
           type="search"
           value={q}
           onChange={(e) => setParam('q', e.target.value)}
-          placeholder="Search, e.g. blender"
+          placeholder="Search, e.g. t-shirt"
           aria-label="Search"
         />
         {!q && (
-          <button className={`square-btn ${showFilters || filterCount ? 'on' : ''}`} onClick={() => setShowFilters((s) => !s)} aria-label="Filters">
+          <button type="button" className={`square-btn ${showFilters || filterCount ? 'on' : ''}`} onClick={() => setShowFilters((s) => !s)} aria-label="Filters">
             <Icons.filter />
             {filterCount > 0 && <span className="dot-count">{filterCount}</span>}
           </button>
@@ -74,10 +71,6 @@ export function GalleryPage() {
 
       {!q && showFilters && (
         <div className="selects">
-          <select value={room} onChange={(e) => setParam('room', e.target.value)} aria-label="Room">
-            <option value="">All rooms</option>
-            {rooms.map((r) => <option key={r}>{r}</option>)}
-          </select>
           <select value={cat} onChange={(e) => setParam('cat', e.target.value, ['sub'])} aria-label="Category">
             <option value="">All categories</option>
             {cats.map((c) => <option key={c}>{c}</option>)}
@@ -87,7 +80,7 @@ export function GalleryPage() {
             {subs.map((s) => <option key={s}>{s}</option>)}
           </select>
           {filterCount > 0 && (
-            <button className="link-btn small" onClick={() => { const n = new URLSearchParams(params); ['room', 'cat', 'sub'].forEach((k) => n.delete(k)); setParams(n, { replace: true }); }}>
+            <button type="button" className="link-btn small" onClick={() => { const n = new URLSearchParams(params); ['cat', 'sub'].forEach((k) => n.delete(k)); setParams(n, { replace: true }); }}>
               clear filters
             </button>
           )}
@@ -105,7 +98,7 @@ export function GalleryPage() {
               {sorted.length} {sorted.length === 1 ? 'item' : 'items'}
               {q ? ` matching “${q}”` : home ? ` in ${homeName(home)}` : ''}
             </p>
-            <Link to="homes" className="link-btn small">manage homes</Link>
+            <Link to="homes" className="link-btn small">homes and people</Link>
           </div>
           <div className="grid">
             {!q && (
@@ -115,7 +108,7 @@ export function GalleryPage() {
               </Link>
             )}
             {sorted.map((it) => (
-              <ItemCard key={it.id} item={it} place={[homeName(it.homeId), it.room].filter(Boolean).join(' · ')} />
+              <ItemCard key={it.id} item={it} place={homeName(it.homeId)} />
             ))}
           </div>
           {sorted.length === 0 && (

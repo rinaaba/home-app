@@ -12,7 +12,6 @@ function fromDoc(id: string, d: DocumentData): Item {
     id,
     name: d.name ?? '',
     homeId: d.homeId ?? '',
-    room: d.room ?? '',
     category: d.category ?? '',
     subcategory: d.subcategory ?? '',
     color: d.color ?? '',
@@ -65,8 +64,8 @@ export function updateItem(id: string, changes: Partial<Omit<Item, 'id' | 'creat
   return updateDoc(doc(itemsCol, id), { ...changes, updatedAt: serverTimestamp() });
 }
 
-export function moveItem(id: string, homeId: string, room: string) {
-  return updateItem(id, { homeId, room, movedAt: serverTimestamp() });
+export function moveItem(id: string, homeId: string) {
+  return updateItem(id, { homeId, movedAt: serverTimestamp() });
 }
 
 export async function removeItemImage(item: Item) {

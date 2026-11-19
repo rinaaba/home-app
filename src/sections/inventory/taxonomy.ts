@@ -25,7 +25,6 @@ export const TAXONOMY: Record<string, string[]> = {
 
 export const CATEGORIES = Object.keys(TAXONOMY);
 
-export const DEFAULT_ROOMS = ['Kitchen', 'Living room', 'Bedroom', 'Kids room', 'Bathroom', 'Closet', 'Office', 'Storage', 'Garage', 'Balcony', 'Garden'];
 
 export const DEFAULT_HOMES = [
   { id: 'tel-aviv', name: 'Tel Aviv', location: 'Israel', sortOrder: 1 },

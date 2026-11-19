@@ -7,15 +7,14 @@ import { homeStyle } from '../homeStyle';
 import type { Item } from '../types';
 
 export function MoveDialog({ item, onClose }: { item: Item; onClose: () => void }) {
-  const { activeHomes, homes, roomsFor } = useInventory();
+  const { activeHomes, homes } = useInventory();
   const [homeId, setHomeId] = useState(activeHomes.find((h) => h.id !== item.homeId)?.id ?? item.homeId);
-  const [room, setRoom] = useState('');
   const [busy, setBusy] = useState(false);
 
   const save = async () => {
     setBusy(true);
     try {
-      await moveItem(item.id, homeId, room.trim());
+      await moveItem(item.id, homeId);
       onClose();
     } catch (e) {
       alert((e as Error).message);
@@ -27,12 +26,7 @@ export function MoveDialog({ item, onClose }: { item: Item; onClose: () => void 
     <Modal title={`Move ${item.name.toLowerCase()}`} onClose={onClose}>
       <p className="label">Where is it now?</p>
       <HomeSwitch homes={activeHomes} value={homeId} onChange={setHomeId} />
-      <div className="form"><label>
-        Room
-        <input list="move-rooms" value={room} onChange={(e) => setRoom(e.target.value)} placeholder="Optional" />
-        <datalist id="move-rooms">{roomsFor(homeId).map((r) => <option key={r} value={r} />)}</datalist>
-      </label></div>
-      <button className={`btn primary big accent-${homeStyle(homes.find((h) => h.id === homeId)).accent}`} onClick={save} disabled={busy}>{busy ? 'Moving…' : 'Move item'}</button>
+      <button type="button" className={`btn primary big accent-${homeStyle(homes.find((h) => h.id === homeId)).accent}`} onClick={save} disabled={busy}>{busy ? 'Moving…' : 'Move item'}</button>
     </Modal>
   );
 }
