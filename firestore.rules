@@ -36,8 +36,8 @@ service cloud.firestore {
     }
 
     match /families/{familyId} {
-      // Members read their family. The app's owners can also see families (names, members, AI use), not their things.
-      allow read: if allowed() && (myEmail() in resource.data.members || onAccessList());
+      // Only members can see a family. No one else, not even the app's owners.
+      allow read: if allowed() && myEmail() in resource.data.members;
       // You can create a family only with yourself in it.
       allow create: if allowed() && myEmail() in request.resource.data.members;
       // Members can rename, invite and remove (including leaving).
@@ -50,7 +50,7 @@ service cloud.firestore {
 
       // Today's AI requests: members can only add 1 at a time, up to the limit. The original family has no limit.
       match /usage/{day} {
-        allow read: if allowed() && (isMember(familyId) || onAccessList());
+        allow read: if allowed() && isMember(familyId);
         allow create: if allowed() && isMember(familyId)
           && request.resource.data.count == 1
           && (familyId == 'main' || dailyLimit(familyId) >= 1);
@@ -60,10 +60,9 @@ service cloud.firestore {
       }
     }
 
-    // AI limits per family: readable by that family, set only by the app's owners.
+    // AI limits per family: readable by that family; changed only in the Firebase console.
     match /limits/{familyId} {
-      allow read: if allowed() && (isMember(familyId) || onAccessList());
-      allow write: if onAccessList();
+      allow read: if allowed() && isMember(familyId);
     }
 
     function onAccessList() {

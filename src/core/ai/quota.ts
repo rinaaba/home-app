@@ -1,11 +1,12 @@
-import { collection, doc, getDoc, getDocs, onSnapshot, runTransaction, setDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, runTransaction } from 'firebase/firestore';
 import { db } from '../firebase/app';
 import { currentFamily } from '../family/scope';
 
 /**
  * Daily AI limits, so one family can't use up the app's shared AI allowance.
  * - The original family ("main") has no limit.
- * - Other families get DEFAULT_DAILY_LIMIT, unless the app's owners set another number in limits/{familyId}.
+ * - Other families get DEFAULT_DAILY_LIMIT, unless another number is set in limits/{familyId}
+ *   (in the Firebase console: Firestore → limits → document named after the family id → field daily).
  * The database rules enforce the same numbers (keep them in sync with firestore.rules).
  */
 export const DEFAULT_DAILY_LIMIT = 50;
@@ -52,23 +53,4 @@ export function subscribeTodayUsage(familyId: string, cb: (count: number) => voi
   return onSnapshot(usageRef(familyId), (s) => cb((s.data()?.count as number | undefined) ?? 0), () => cb(0));
 }
 
-/** For the app's owners: every family with today's use and its limit. */
-export async function listFamilyUsage() {
-  const fams = await getDocs(collection(db, 'families'));
-  return Promise.all(
-    fams.docs.map(async (f) => {
-      const [usage, limit] = await Promise.all([getDoc(usageRef(f.id)).catch(() => null), getDailyLimit(f.id)]);
-      return {
-        id: f.id,
-        name: String(f.data().name ?? 'Family'),
-        members: (f.data().members as string[] | undefined) ?? [],
-        today: (usage?.data()?.count as number | undefined) ?? 0,
-        limit,
-      };
-    }),
-  );
-}
 
-export function setDailyLimit(familyId: string, daily: number) {
-  return setDoc(limitRef(familyId), { daily });
-}
