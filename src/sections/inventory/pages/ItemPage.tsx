@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Spinner } from '../../../core/ui/Spinner';
 import { useInventory } from '../InventoryContext';
 import { isStuck, regenerateCleanImage } from '../ai/cleanImage';
-import { ItemImage } from '../components/ItemImage';
+import { ItemImage, StoredImageView } from '../components/ItemImage';
 import { MoveDialog } from '../components/MoveDialog';
 import { deleteItem } from '../data/items';
 
@@ -58,7 +58,7 @@ export function ItemPage() {
       <div className="item-layout">
         <div className="item-photo">
           {showOriginal && item.photo ? (
-            <img className="item-img" src={item.photo.url} alt={`${item.name}, original photo`} />
+            <StoredImageView img={item.photo} size="full" alt={`${item.name}, original photo`} />
           ) : (
             <ItemImage item={item} size="full" />
           )}
@@ -69,7 +69,9 @@ export function ItemPage() {
               </button>
             )}
             {(pending || regenerating) && <span className="muted">Making clean image…</span>}
-            {item.cleanStatus === 'failed' && !regenerating && <span className="muted">Clean image failed.</span>}
+            {item.cleanStatus === 'failed' && !regenerating && (
+              <span className="muted">Clean image didn’t work{item.cleanError ? `: ${item.cleanError}` : '.'}</span>
+            )}
             {canRegenerate && (
               <button className="btn small" onClick={regenerate}>
                 {item.clean ? 'Make a new clean image' : 'Make clean image'}

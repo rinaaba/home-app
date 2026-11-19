@@ -1,4 +1,7 @@
 import type { Timestamp } from 'firebase/firestore';
+import type { StoredImage } from '../../core/images/imageStore';
+
+export type { StoredImage };
 
 export interface Home {
   id: string;
@@ -6,13 +9,6 @@ export interface Home {
   location: string;
   archived: boolean;
   sortOrder: number;
-}
-
-export interface StoredImage {
-  url: string;
-  thumbUrl: string;
-  path: string;
-  thumbPath: string;
 }
 
 export type CleanStatus = 'none' | 'pending' | 'ready' | 'failed';
@@ -32,6 +28,8 @@ export interface Item {
   clean: StoredImage | null;
   cleanStatus: CleanStatus;
   cleanRequestedAt: Timestamp | null;
+  /** Why the last clean image attempt failed, if it did. */
+  cleanError: string;
   createdAt: Timestamp | null;
   updatedAt: Timestamp | null;
   createdBy: string;

@@ -17,7 +17,7 @@ A family home app. Version 1 has one section: **Inventory** — what we own, and
 
 ## Tech
 - **React + Vite + TypeScript** — the most widely used, best-documented setup for a small web app; builds to a static site that GitHub Pages can host.
-- **Firebase**: Authentication (Google), Firestore (data), Storage (photos), AI Logic (Gemini, for guessing details and making images — no server or secret key needed).
+- **Firebase**: Authentication (Google), Firestore (data; also photos on the free plan), Storage (photos on the paid plan), AI Logic (Gemini, for guessing details and making images — no server or secret key needed).
 - **GitHub Pages** via GitHub Actions: every push to `main` deploys automatically.
 
 ## Folder structure
@@ -53,7 +53,7 @@ docs/SETUP.md                    step-by-step setup
 - `config/access` — `{ emails: [...] }`: who may use the app
 - `homes/{id}` — `name, location, archived, sortOrder`
 - `items/{id}` — `name, homeId, room, category, subcategory, owner, notes, photo, clean, cleanStatus, createdBy, createdAt, updatedAt`
-- Storage: `items/{id}/photo.jpg`, `photo_thumb.jpg`, `clean.jpg`, `clean_thumb.jpg`
+- Photos, free plan: thumbnail inside the item, full image in `images/{key}`. Paid plan: Storage `items/{id}/photo.jpg`, `photo_thumb.jpg`, `clean.jpg`, `clean_thumb.jpg` (setting: `photoStorage` in `config.ts`)
 
 ## Adding a section later
 1. Create `src/sections/<name>/index.tsx` that exports an `AppSection` (id, title, icon, path, Component).

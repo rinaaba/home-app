@@ -1,9 +1,8 @@
 import {
   collection, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc, updateDoc, type DocumentData,
 } from 'firebase/firestore';
-import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { db, storage } from '../../../core/firebase/app';
-import { resizeImage } from '../../../core/images/resize';
+import { db } from '../../../core/firebase/app';
+import { deleteImage, saveImage } from '../../../core/images/imageStore';
 import type { Item, ItemDetails, StoredImage } from '../types';
 
 const itemsCol = collection(db, 'items');
@@ -22,6 +21,7 @@ function fromDoc(id: string, d: DocumentData): Item {
     clean: d.clean ?? null,
     cleanStatus: d.cleanStatus ?? 'none',
     cleanRequestedAt: d.cleanRequestedAt ?? null,
+    cleanError: d.cleanError ?? '',
     createdAt: d.createdAt ?? null,
     updatedAt: d.updatedAt ?? null,
     createdBy: d.createdBy ?? '',
@@ -40,17 +40,9 @@ export function newItemId() {
   return doc(itemsCol).id;
 }
 
-/** Upload an image in two sizes: full (for the detail page) and thumbnail (for the gallery). */
-export async function uploadImage(itemId: string, name: 'photo' | 'clean', blob: Blob): Promise<StoredImage> {
-  const [full, thumb] = await Promise.all([resizeImage(blob, 1600), resizeImage(blob, 480, 0.8)]);
-  const path = `items/${itemId}/${name}.jpg`;
-  const thumbPath = `items/${itemId}/${name}_thumb.jpg`;
-  const meta = { contentType: 'image/jpeg', cacheControl: 'public, max-age=31536000' };
-  await Promise.all([uploadBytes(ref(storage, path), full, meta), uploadBytes(ref(storage, thumbPath), thumb, meta)]);
-  const [url, thumbUrl] = await Promise.all([getDownloadURL(ref(storage, path)), getDownloadURL(ref(storage, thumbPath))]);
-  // Add a version so a regenerated image isn't served from the old cache.
-  const v = `&v=${Date.now()}`;
-  return { url: url + v, thumbUrl: thumbUrl + v, path, thumbPath };
+/** Save one of an item's images (the photo or the clean image). */
+export function uploadImage(itemId: string, name: 'photo' | 'clean', blob: Blob): Promise<StoredImage> {
+  return saveImage(`items/${itemId}/${name}`, blob);
 }
 
 export async function createItem(id: string, details: ItemDetails, photo: StoredImage | null, createdBy: string) {
@@ -76,6 +68,5 @@ export function moveItem(id: string, homeId: string, room: string) {
 
 export async function deleteItem(item: Item) {
   await deleteDoc(doc(itemsCol, item.id));
-  const paths = [item.photo, item.clean].flatMap((img) => (img ? [img.path, img.thumbPath] : []));
-  await Promise.all(paths.map((p) => deleteObject(ref(storage, p)).catch(() => undefined)));
+  await Promise.all([item.photo, item.clean].map((img) => (img ? deleteImage(img) : undefined)));
 }

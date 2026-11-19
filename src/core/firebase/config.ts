@@ -20,3 +20,11 @@ export const firebaseConfig = {
 export const appCheckSiteKey = '';
 
 export const isConfigured = !firebaseConfig.apiKey.startsWith('PASTE_');
+
+/**
+ * Where photos are kept.
+ * - 'database': free plan. Photos are stored (a bit smaller) inside the Firestore database. Good for trying the app.
+ * - 'storage':  pay-as-you-go plan. Full-size photos in Firebase Storage. Switch to this after upgrading
+ *               (and doing the Storage step in docs/SETUP.md). New photos go to Storage; old ones keep working.
+ */
+export const photoStorage: 'database' | 'storage' = 'database';
