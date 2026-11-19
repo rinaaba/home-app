@@ -197,6 +197,10 @@ code { font-family: var(--mono); background: var(--card); padding: 1px 6px; bord
 .ai-answer.is-error { background: var(--danger-soft); border-color: var(--danger-border); color: var(--danger); font-size: 0.95rem; }
 .ai-icon { color: var(--accent); flex-shrink: 0; margin-top: 2px; }
 
+/* Add: preview of the saved picture */
+.thumb-preview { display: flex; gap: 14px; align-items: center; margin-bottom: 12px; }
+.thumb-preview img { width: 140px; height: 140px; border-radius: var(--radius); border: 1px solid var(--border); background: #fff; flex-shrink: 0; }
+
 /* Add */
 .pick { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
 .pick .btn.huge:not(.primary) { background: var(--card); }

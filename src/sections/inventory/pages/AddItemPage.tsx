@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../core/auth/AuthProvider';
 import { resizeImage } from '../../../core/images/resize';
+import { cropToItem } from '../../../core/images/crop';
 import { Spinner } from '../../../core/ui/Spinner';
 import { useToast } from '../../../core/ui/toast';
 import { useInventory } from '../InventoryContext';
@@ -22,6 +23,9 @@ interface Entry {
   file: File;
   photo?: Blob;
   preview?: string;
+  /** The small product view that will be saved (cropped to the item). */
+  thumb?: Blob;
+  thumbUrl?: string;
   guess?: Guess;
   error?: string;
   status: 'waiting' | 'looking' | 'ready' | 'failed' | 'unreadable';
@@ -63,7 +67,7 @@ export function AddItemPage() {
   // Free the photo previews when leaving the page.
   const queueRef = useRef(queue);
   queueRef.current = queue;
-  useEffect(() => () => queueRef.current.forEach((e) => e.preview && URL.revokeObjectURL(e.preview)), []);
+  useEffect(() => () => queueRef.current.forEach((e) => { if (e.preview) URL.revokeObjectURL(e.preview); if (e.thumbUrl) URL.revokeObjectURL(e.thumbUrl); }), []);
 
   const patch = (i: number, changes: Partial<Entry>) =>
     setQueue((q) => q.map((e, j) => (j === i ? { ...e, ...changes } : e)));
@@ -84,10 +88,12 @@ export function AddItemPage() {
       patch(i, { photo, preview: URL.createObjectURL(photo) });
       try {
         const guess = await classifyPhoto(photo);
-        if (runRef.current === run) patch(i, { guess, status: 'ready' });
+        const thumb = await cropToItem(photo, guess.box).catch(() => undefined);
+        if (runRef.current === run) patch(i, { guess, thumb, thumbUrl: thumb && URL.createObjectURL(thumb), status: 'ready' });
       } catch (e) {
         console.error(e);
-        if (runRef.current === run) patch(i, { status: 'failed', error: describeAiError(e) });
+        const thumb = await cropToItem(photo, undefined).catch(() => undefined);
+        if (runRef.current === run) patch(i, { status: 'failed', error: describeAiError(e), thumb, thumbUrl: thumb && URL.createObjectURL(thumb) });
       }
     }
   };
@@ -141,8 +147,8 @@ export function AddItemPage() {
     try {
       const id = newItemId();
       const withPicture = current?.photo && keepPicture ? current.photo : null;
-      // A low-res copy of the photo is shown until the AI picture is ready (or if it fails).
-      const fallback = withPicture ? await saveItemImage(id, withPicture) : null;
+      // The small product view (cropped to the item) is saved; it stays unless an AI picture replaces it.
+      const fallback = withPicture ? await saveItemImage(id, current?.thumb ?? withPicture) : null;
       const clean: ItemDetails = { ...details, name: details.name.trim(), color: details.color.trim(), owner: details.owner.trim(), notes: details.notes.trim() };
       await createItem(id, clean, fallback, user?.displayName ?? user?.email ?? '');
       saveLastHome(clean.homeId);
@@ -205,7 +211,14 @@ export function AddItemPage() {
             </div>
           )}
 
-          {current?.preview && <img className="preview" src={current.preview} alt="Your photo" />}
+          {current?.thumbUrl && keepPicture ? (
+            <div className="thumb-preview">
+              <img src={current.thumbUrl} alt="The picture that will be saved" />
+              <span className="meta">This small picture is saved with the item. Your photo isn’t kept.</span>
+            </div>
+          ) : (
+            current?.preview && <img className="preview" src={current.preview} alt="Your photo" />
+          )}
 
           {!isReady ? (
             <Spinner label="Looking at your photo…" />
@@ -222,7 +235,7 @@ export function AddItemPage() {
               <input type="checkbox" checked={keepPicture} onChange={(e) => setKeepPicture(e.target.checked)} />
               <span>
                 Keep a picture of this item
-                <small className="muted">Off for things like socks: only the details and color are saved. Your photo itself is never kept.</small>
+                <small className="muted">Off for things like socks: only the details and color are saved.</small>
               </span>
             </label>
           )}

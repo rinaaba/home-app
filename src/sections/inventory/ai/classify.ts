@@ -9,6 +9,8 @@ export interface Guess {
   color: string;
   colorHex: string;
   notes: string;
+  /** Where the item is in the photo: [ymin, xmin, ymax, xmax], 0–1000. */
+  box?: number[];
 }
 
 const schema = Schema.object({
@@ -19,6 +21,10 @@ const schema = Schema.object({
     color: Schema.string({ description: 'Main color in plain words, sentence case, e.g. "Navy blue", "Black and white"' }),
     colorHex: Schema.string({ description: 'The main color as a hex code like #1f2a44' }),
     notes: Schema.string({ description: 'Brand, size, material or other useful details visible in the photo. Short. Empty if none.' }),
+    box: Schema.array({
+      items: Schema.integer(),
+      description: 'Bounding box of the main item as [ymin, xmin, ymax, xmax], each 0-1000 relative to the image size. Include the whole item.',
+    }),
   },
 });
 

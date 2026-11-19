@@ -15,7 +15,7 @@ export interface StoredImage {
 }
 
 /** Pictures are kept small on purpose: they only need to be recognizable in the gallery. */
-const MAX_SIDE = 480;
+const MAX_SIDE = 400;
 
 const blobToDataUrl = (blob: Blob) =>
   new Promise<string>((resolve, reject) => {

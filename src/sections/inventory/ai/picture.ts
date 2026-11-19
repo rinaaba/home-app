@@ -9,8 +9,9 @@ import type { Item, StoredImage } from '../types';
  * The look of every AI picture. Change this text to change the style of the whole gallery.
  */
 export const PICTURE_STYLE =
-  'a simple, flat-color illustration of the single item, like an icon in a catalog: centered, fully visible, ' +
-  'square, plain white background, minimal detail but true to the real color, shape and pattern, no shadows, no text, no people';
+  'a clean product photo of the single item, like an online shop listing: front view, laid flat or standing, ' +
+  'centered and fully visible, square, plain white background, soft even daylight, true to the real color, shape, ' +
+  'pattern and details, no people, no hands, no text, nothing else in the picture';
 
 /**
  * Make the AI picture from a photo and save it in place of `previous` (the low-res photo copy).
