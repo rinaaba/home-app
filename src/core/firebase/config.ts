@@ -12,7 +12,7 @@ export const firebaseConfig = {
 };
 
 /**
- * Optional, recommended later: a reCAPTCHA v3 site key for Firebase App Check (free, see docs/SETUP.md).
+ * reCAPTCHA Enterprise site key for Firebase App Check (stops other websites from using the AI).
  * It stops other websites from using your AI quota. Leave empty to skip.
  */
 export const appCheckSiteKey = '6LcPvSguAAAAAMyo0YBCc7t-mRI_AEADtOLbegCR';
