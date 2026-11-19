@@ -27,17 +27,43 @@ service cloud.firestore {
       allow read: if allowed();
     }
 
+    // Daily AI limit for a family: set by the app's owners in limits/{familyId}; 50 if not set.
+    // Keep the default in sync with DEFAULT_DAILY_LIMIT in src/core/ai/quota.ts.
+    function dailyLimit(familyId) {
+      return exists(/databases/$(database)/documents/limits/$(familyId))
+        ? get(/databases/$(database)/documents/limits/$(familyId)).data.daily
+        : 50;
+    }
+
     match /families/{familyId} {
-      allow read: if allowed() && myEmail() in resource.data.members;
+      // Members read their family. The app's owners can also see families (names, members, AI use), not their things.
+      allow read: if allowed() && (myEmail() in resource.data.members || onAccessList());
       // You can create a family only with yourself in it.
       allow create: if allowed() && myEmail() in request.resource.data.members;
       // Members can rename, invite and remove (including leaving).
       allow update: if allowed() && myEmail() in resource.data.members;
 
-      // Everything inside a family (homes, items, people, and future sections).
-      match /{document=**} {
-        allow read, write: if allowed() && isMember(familyId);
+      // Everything inside a family (homes, items, people, and future sections), except the AI counter.
+      match /{collection}/{rest=**} {
+        allow read, write: if allowed() && isMember(familyId) && collection != 'usage';
       }
+
+      // Today's AI requests: members can only add 1 at a time, up to the limit. The original family has no limit.
+      match /usage/{day} {
+        allow read: if allowed() && (isMember(familyId) || onAccessList());
+        allow create: if allowed() && isMember(familyId)
+          && request.resource.data.count == 1
+          && (familyId == 'main' || dailyLimit(familyId) >= 1);
+        allow update: if allowed() && isMember(familyId)
+          && request.resource.data.count == resource.data.count + 1
+          && (familyId == 'main' || request.resource.data.count <= dailyLimit(familyId));
+      }
+    }
+
+    // AI limits per family: readable by that family, set only by the app's owners.
+    match /limits/{familyId} {
+      allow read: if allowed() && (isMember(familyId) || onAccessList());
+      allow write: if onAccessList();
     }
 
     function onAccessList() {

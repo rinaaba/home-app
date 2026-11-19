@@ -238,6 +238,13 @@ code { font-family: var(--mono); background: var(--card); padding: 1px 6px; bord
 .square-btn:disabled { opacity: 0.35; cursor: default; }
 
 /* Settings */
+.usage-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.usage-num { font-family: var(--mono); color: var(--accent); }
+.usage-bar { height: 8px; border-radius: 4px; background: var(--input); border: 1px solid var(--border); overflow: hidden; margin: 10px 0; }
+.usage-bar div { height: 100%; background: var(--accent); }
+.family-usage { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.family-usage .meta { overflow-wrap: anywhere; }
+.limit-field input { width: 90px; min-height: 40px; padding: 0 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--input); color: var(--text); font: inherit; }
 .start-card { text-align: center; padding: 32px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .start-card h2 { margin: 0; }
 .settings-section { margin-bottom: 28px; }

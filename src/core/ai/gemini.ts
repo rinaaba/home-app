@@ -7,6 +7,7 @@ import {
 } from 'firebase/ai';
 import { ai } from '../firebase/app';
 import { IMAGE_MODELS, TEXT_MODELS } from './models';
+import { AiLimitReached, countAiRequest } from './quota';
 
 // Remember which model worked, so we don't retry missing ones every time.
 const working: Record<string, string> = {};
@@ -25,6 +26,7 @@ export function isRateLimited(err: unknown) {
 
 /** A short explanation of an AI error, in plain words. */
 export function describeAiError(err: unknown): string {
+  if (err instanceof AiLimitReached) return err.message;
   const msg = errText(err);
   if (/app check/i.test(msg)) return 'The AI is blocked by App Check in Firebase. Turn off App Check enforcement for AI Logic (see the setup guide).';
   if (/\[403|permission|api has not been used|disabled/i.test(msg)) return 'The AI isn’t turned on for this Firebase project yet (Firebase → AI Logic → Get started).';
@@ -75,6 +77,7 @@ export async function blobToPart(blob: Blob): Promise<Part> {
 
 /** Ask Gemini a question (optionally about images) and get back JSON matching `schema`. */
 export async function generateJson<T>(prompt: string, images: Blob[], schema: Schema): Promise<T> {
+  await countAiRequest(); // counts toward the family's daily AI limit
   const parts: Part[] = [{ text: prompt }, ...(await Promise.all(images.map(blobToPart)))];
   const generationConfig: GenerationConfig = { responseMimeType: 'application/json', responseSchema: schema };
   return withModelFallback('text', TEXT_MODELS, async (model) => {
@@ -86,6 +89,7 @@ export async function generateJson<T>(prompt: string, images: Blob[], schema: Sc
 
 /** Ask Gemini to create an image (optionally based on input images). Returns the image as a Blob. */
 export async function generateImage(prompt: string, images: Blob[]): Promise<Blob> {
+  await countAiRequest(); // counts toward the family's daily AI limit
   const parts: Part[] = [{ text: prompt }, ...(await Promise.all(images.map(blobToPart)))];
   return withModelFallback('image', IMAGE_MODELS, async (model) => {
     const m = getGenerativeModel(ai, {
