@@ -1,16 +1,14 @@
 /**
- * ⬇️  PASTE YOUR FIREBASE SETTINGS HERE  ⬇️
- *
  * Firebase console → Project settings (gear icon) → "Your apps" → Web app → "SDK setup and configuration" → Config.
  * Copy the values into the object below. These values are not secret — it is normal for them to be public.
  */
 export const firebaseConfig = {
-  apiKey: 'PASTE_API_KEY',
-  authDomain: 'PASTE_PROJECT_ID.firebaseapp.com',
-  projectId: 'PASTE_PROJECT_ID',
-  storageBucket: 'PASTE_PROJECT_ID.firebasestorage.app',
-  messagingSenderId: 'PASTE_SENDER_ID',
-  appId: 'PASTE_APP_ID',
+  apiKey: 'AIzaSyBD7_1pgbUBZul2gFucnD-hjaheBkVBcGQ',
+  authDomain: 'orina-home-app.firebaseapp.com',
+  projectId: 'orina-home-app',
+  storageBucket: 'orina-home-app.firebasestorage.app',
+  messagingSenderId: '861947889825',
+  appId: '1:861947889825:web:7178da5a0bbfdaeec448e0',
 };
 
 /**
