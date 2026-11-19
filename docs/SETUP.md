@@ -2,8 +2,8 @@
 
 Do these one at a time. Each step says where to click. Use a laptop; it's easiest.
 
-The app starts on Firebase's **free plan**. Everything works except, most likely, the AI "clean pictures"
-(your own photos are shown instead). See **Upgrade later** at the bottom when you're ready.
+The app starts on Firebase's **free plan**. Everything works except, most likely, the AI pictures
+(a small low-res copy of your photo is shown instead). See **Upgrade later** at the bottom when you're ready.
 
 ---
 
@@ -80,7 +80,7 @@ Open the website and sign in. The three homes are created automatically.
 
 ## Upgrade later (pay-as-you-go "Blaze" plan)
 
-Do this when you've decided the app is worth keeping. It unlocks AI clean pictures, full-size photos,
+Do this when you've decided the app is worth keeping. It unlocks AI pictures
 and keeps your photos out of Google's AI training. Expected cost: about 4 US cents per AI picture,
 pennies per month for storage.
 
@@ -89,13 +89,13 @@ pennies per month for storage.
    Then **Rules** tab → paste [`storage.rules`](../storage.rules) → **Publish**
    (if asked to let Storage access Firestore, click **Allow**).
 3. **Switch the app to it:** in `src/core/firebase/config.ts` change `photoStorage` from `'database'` to `'storage'` and commit.
-   Photos you already added keep working.
-4. **Allow "Make a new clean image"** for photos in Storage: open console.cloud.google.com (your project selected),
+   Pictures you already added keep working. (Optional: you can also skip Storage entirely and keep `'database'` — pictures are small.)
+4. **Allow "Try AI picture again"** for pictures in Storage: open console.cloud.google.com (your project selected),
    click the Cloud Shell icon `>_`, and paste (replace `YOUR-BUCKET` with `storageBucket` from Step 6):
    ```
    echo '[{"origin":["*"],"method":["GET"],"maxAgeSeconds":3600}]' > cors.json && gcloud storage buckets update gs://YOUR-BUCKET --cors-file=cors.json
    ```
-5. For items added on the free plan, open each one and tap **Make clean image**.
+5. For items added on the free plan that show a photo copy, open each one and tap **Try AI picture again**.
 
 ### Optional: protect the AI quota (App Check)
 Ask Claude to walk you through it when you're ready.

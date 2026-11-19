@@ -2,35 +2,38 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Spinner } from '../../../core/ui/Spinner';
 import { useInventory } from '../InventoryContext';
-import { isStuck, regenerateCleanImage } from '../ai/cleanImage';
-import { ItemImage, StoredImageView } from '../components/ItemImage';
+import { isStuck, retryItemPicture } from '../ai/picture';
+import { ItemImage } from '../components/ItemImage';
 import { MoveDialog } from '../components/MoveDialog';
-import { deleteItem } from '../data/items';
+import { deleteItem, removeItemImage } from '../data/items';
 
 export function ItemPage() {
   const { id } = useParams();
   const { items, loading, homeName } = useInventory();
   const navigate = useNavigate();
   const [moving, setMoving] = useState(false);
-  const [showOriginal, setShowOriginal] = useState(false);
-  const [regenerating, setRegenerating] = useState(false);
+  const [working, setWorking] = useState(false);
 
   if (loading) return <Spinner label="Loading" />;
   const item = items.find((i) => i.id === id);
   if (!item) return <div className="page narrow"><p>This item doesn’t exist anymore.</p><Link to="../.." relative="path">Back to inventory</Link></div>;
 
-  const pending = item.cleanStatus === 'pending' && !isStuck(item);
-  const canRegenerate = !!item.photo && !pending && !regenerating;
+  const pending = (item.imageStatus === 'pending' && !isStuck(item)) || working;
+  const canRetry = item.imageKind === 'photo' && !pending;
 
-  const regenerate = async () => {
-    setRegenerating(true);
+  const retry = async () => {
+    setWorking(true);
     try {
-      await regenerateCleanImage(item);
+      await retryItemPicture(item);
     } catch (e) {
-      alert(`Couldn’t make a new image: ${(e as Error).message}`);
+      alert(`Couldn’t make a picture: ${(e as Error).message}`);
     } finally {
-      setRegenerating(false);
+      setWorking(false);
     }
+  };
+
+  const removePicture = async () => {
+    if (confirm('Remove the picture? The item will show a color tile instead.')) await removeItemImage(item);
   };
 
   const remove = async () => {
@@ -44,6 +47,7 @@ export function ItemPage() {
     ['Room', item.room],
     ['Category', item.category],
     ['Sub-category', item.subcategory],
+    ['Color', item.color],
     ['Owner', item.owner],
     ['Notes', item.notes],
     ['Added by', item.createdBy],
@@ -57,26 +61,17 @@ export function ItemPage() {
 
       <div className="item-layout">
         <div className="item-photo">
-          {showOriginal && item.photo ? (
-            <StoredImageView img={item.photo} size="full" alt={`${item.name}, original photo`} />
-          ) : (
-            <ItemImage item={item} size="full" />
-          )}
+          <ItemImage item={item} />
           <div className="photo-actions">
-            {item.clean && item.photo && (
-              <button className="btn small" onClick={() => setShowOriginal((s) => !s)}>
-                {showOriginal ? 'Show clean image' : 'Show original photo'}
-              </button>
+            {pending && <span className="muted">Making a picture…</span>}
+            {!pending && item.imageKind === 'photo' && (
+              <span className="muted">
+                Showing a small copy of your photo.
+                {item.imageStatus === 'failed' && item.imageError ? ` The AI picture didn’t work: ${item.imageError}` : ''}
+              </span>
             )}
-            {(pending || regenerating) && <span className="muted">Making clean image…</span>}
-            {item.cleanStatus === 'failed' && !regenerating && (
-              <span className="muted">Clean image didn’t work{item.cleanError ? `: ${item.cleanError}` : '.'}</span>
-            )}
-            {canRegenerate && (
-              <button className="btn small" onClick={regenerate}>
-                {item.clean ? 'Make a new clean image' : 'Make clean image'}
-              </button>
-            )}
+            {canRetry && <button className="btn small" onClick={retry}>Try AI picture again</button>}
+            {item.image && !pending && <button className="btn small" onClick={removePicture}>Remove picture</button>}
           </div>
         </div>
 
@@ -84,7 +79,13 @@ export function ItemPage() {
           <h1>{item.name}</h1>
           <dl>
             {rows.filter(([, v]) => v).map(([k, v]) => (
-              <div key={k} className="dl-row"><dt>{k}</dt><dd>{v}</dd></div>
+              <div key={k} className="dl-row">
+                <dt>{k}</dt>
+                <dd>
+                  {k === 'Color' && item.colorHex && <span className="swatch" style={{ background: item.colorHex }} />}
+                  {v}
+                </dd>
+              </div>
             ))}
           </dl>
           <div className="actions">

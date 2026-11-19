@@ -9,8 +9,9 @@ A family home app. Version 1 has one section: **Inventory** — what we own, and
 - Sign in with Google (only emails on the family list get in), shared data for everyone in the family
 - Gallery of items, filter by home, room, category, sub-category
 - Search across all homes ("where is the blender?")
-- Quick add: take a photo → AI guesses name, category, sub-category, room and notes → you confirm
-- AI makes a clean, consistent catalog-style picture of each item (the original photo is kept too)
+- Quick add: take a photo → AI guesses name, category, sub-category, color, room and notes → you confirm
+- AI turns the photo into one small, simple picture; the photo itself is never kept
+- Pictures are optional (switch it off for socks): items without one show a color tile
 - Move an item to another home, edit, delete
 - Add, rename, archive homes
 - Installable on phone, laptop and tablet (PWA); works with a weak connection
@@ -42,7 +43,7 @@ src/
       index.tsx            section definition + its pages
       types.ts, taxonomy.ts (categories, default rooms and homes)
       data/                reading/writing homes and items
-      ai/                  photo guessing + clean image (style text lives here)
+      ai/                  photo guessing + AI picture (style text lives in picture.ts)
       pages/, components/
   styles/global.css
 firestore.rules, storage.rules   security rules (paste into Firebase console)
@@ -52,8 +53,8 @@ docs/SETUP.md                    step-by-step setup
 ## Data
 - `config/access` — `{ emails: [...] }`: who may use the app
 - `homes/{id}` — `name, location, archived, sortOrder`
-- `items/{id}` — `name, homeId, room, category, subcategory, owner, notes, photo, clean, cleanStatus, createdBy, createdAt, updatedAt`
-- Photos, free plan: thumbnail inside the item, full image in `images/{key}`. Paid plan: Storage `items/{id}/photo.jpg`, `photo_thumb.jpg`, `clean.jpg`, `clean_thumb.jpg` (setting: `photoStorage` in `config.ts`)
+- `items/{id}` — `name, homeId, room, category, subcategory, color, colorHex, owner, notes, image, imageKind (ai | photo), imageStatus, createdBy, createdAt, updatedAt`
+- Pictures (one small image per item, max 480px): free plan — stored inside the item document; paid plan — Storage `items/{id}/image_*.jpg` (setting: `photoStorage` in `config.ts`)
 
 ## Adding a section later
 1. Create `src/sections/<name>/index.tsx` that exports an `AppSection` (id, title, icon, path, Component).

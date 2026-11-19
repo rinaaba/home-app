@@ -15,13 +15,15 @@ function fromDoc(id: string, d: DocumentData): Item {
     room: d.room ?? '',
     category: d.category ?? '',
     subcategory: d.subcategory ?? '',
+    color: d.color ?? '',
+    colorHex: d.colorHex ?? '',
     owner: d.owner ?? '',
     notes: d.notes ?? '',
-    photo: d.photo ?? null,
-    clean: d.clean ?? null,
-    cleanStatus: d.cleanStatus ?? 'none',
-    cleanRequestedAt: d.cleanRequestedAt ?? null,
-    cleanError: d.cleanError ?? '',
+    image: d.image ?? null,
+    imageKind: d.imageKind ?? null,
+    imageStatus: d.imageStatus ?? 'none',
+    imageRequestedAt: d.imageRequestedAt ?? null,
+    imageError: d.imageError ?? '',
     createdAt: d.createdAt ?? null,
     updatedAt: d.updatedAt ?? null,
     createdBy: d.createdBy ?? '',
@@ -40,18 +42,19 @@ export function newItemId() {
   return doc(itemsCol).id;
 }
 
-/** Save one of an item's images (the photo or the clean image). */
-export function uploadImage(itemId: string, name: 'photo' | 'clean', blob: Blob): Promise<StoredImage> {
-  return saveImage(`items/${itemId}/${name}`, blob);
+export function saveItemImage(itemId: string, blob: Blob): Promise<StoredImage> {
+  return saveImage(`items/${itemId}/image`, blob);
 }
 
-export async function createItem(id: string, details: ItemDetails, photo: StoredImage | null, createdBy: string) {
+/** `fallback` is a low-res copy of the photo, shown until (or instead of) the AI picture. */
+export async function createItem(id: string, details: ItemDetails, fallback: StoredImage | null, createdBy: string) {
   await setDoc(doc(itemsCol, id), {
     ...details,
-    photo,
-    clean: null,
-    cleanStatus: photo ? 'pending' : 'none',
-    cleanRequestedAt: photo ? serverTimestamp() : null,
+    image: fallback,
+    imageKind: fallback ? 'photo' : null,
+    imageStatus: fallback ? 'pending' : 'none',
+    imageRequestedAt: fallback ? serverTimestamp() : null,
+    imageError: '',
     createdBy,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -66,7 +69,12 @@ export function moveItem(id: string, homeId: string, room: string) {
   return updateItem(id, { homeId, room, movedAt: serverTimestamp() });
 }
 
+export async function removeItemImage(item: Item) {
+  await updateItem(item.id, { image: null, imageKind: null, imageStatus: 'none', imageError: '' });
+  if (item.image) await deleteImage(item.image);
+}
+
 export async function deleteItem(item: Item) {
   await deleteDoc(doc(itemsCol, item.id));
-  await Promise.all([item.photo, item.clean].map((img) => (img ? deleteImage(img) : undefined)));
+  if (item.image) await deleteImage(item.image);
 }

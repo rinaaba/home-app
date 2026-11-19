@@ -10,7 +10,7 @@ function EditForm({ item }: { item: Item }) {
   const navigate = useNavigate();
   const [details, setDetails] = useState<ItemDetails>({
     name: item.name, homeId: item.homeId, room: item.room, category: item.category,
-    subcategory: item.subcategory, owner: item.owner, notes: item.notes,
+    subcategory: item.subcategory, color: item.color, colorHex: item.colorHex, owner: item.owner, notes: item.notes,
   });
   const [busy, setBusy] = useState(false);
 

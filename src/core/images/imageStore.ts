@@ -1,22 +1,21 @@
-import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import { deleteObject, getBlob, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { db, storage } from '../firebase/app';
+import { storage } from '../firebase/app';
 import { photoStorage } from '../firebase/config';
 import { resizeImage } from './resize';
 
 /**
- * A saved image. Any section can use this to keep pictures.
- * - backend 'storage':  url/thumbUrl are Firebase Storage links.
- * - backend 'database': thumbUrl is the small image itself (data URL); the full image is in the
- *                       Firestore document at `path` and loaded on demand.
+ * One small saved picture. Any section can use this.
+ * - backend 'database': `url` is the picture itself (a data URL), stored right inside the document. Free plan.
+ * - backend 'storage':  `url` is a Firebase Storage link, `path` is the file. Paid plan.
  */
 export interface StoredImage {
-  backend?: 'storage' | 'database';
+  backend: 'database' | 'storage';
   url: string;
-  thumbUrl: string;
   path: string;
-  thumbPath: string;
 }
+
+/** Pictures are kept small on purpose: they only need to be recognizable in the gallery. */
+const MAX_SIDE = 480;
 
 const blobToDataUrl = (blob: Blob) =>
   new Promise<string>((resolve, reject) => {
@@ -26,55 +25,36 @@ const blobToDataUrl = (blob: Blob) =>
     r.readAsDataURL(blob);
   });
 
-/** Resize until the encoded image fits under a Firestore-friendly size. */
-async function compactDataUrl(blob: Blob, maxSide: number, quality: number, maxChars: number) {
-  for (let side = maxSide, q = quality; side >= 200; side = Math.round(side * 0.8), q = Math.max(0.5, q - 0.1)) {
+/** Shrink until it fits comfortably inside a database document. */
+async function compactDataUrl(blob: Blob, maxChars = 80_000) {
+  for (let side = MAX_SIDE, q = 0.75; side >= 160; side = Math.round(side * 0.8), q = Math.max(0.5, q - 0.08)) {
     const url = await blobToDataUrl(await resizeImage(blob, side, q));
     if (url.length <= maxChars) return url;
   }
-  throw new Error('Photo is too large to save');
+  throw new Error('Picture is too large to save');
 }
 
-/** Save an image in two sizes (full + thumbnail). `key` is unique per image, e.g. "items/abc/photo". */
+/** Save a picture. `key` is unique per picture, e.g. "items/abc/image". */
 export async function saveImage(key: string, blob: Blob): Promise<StoredImage> {
   if (photoStorage === 'database') {
-    const [full, thumb] = await Promise.all([
-      compactDataUrl(blob, 1024, 0.8, 700_000),
-      compactDataUrl(blob, 360, 0.7, 60_000),
-    ]);
-    const path = `images/${key.replaceAll('/', '_')}`;
-    await setDoc(doc(db, path), { data: full });
-    return { backend: 'database', url: '', thumbUrl: thumb, path, thumbPath: '' };
+    return { backend: 'database', url: await compactDataUrl(blob), path: '' };
   }
-
-  const [full, thumb] = await Promise.all([resizeImage(blob, 1600), resizeImage(blob, 480, 0.8)]);
-  const path = `${key}.jpg`;
-  const thumbPath = `${key}_thumb.jpg`;
-  const meta = { contentType: 'image/jpeg', cacheControl: 'public, max-age=31536000' };
-  await Promise.all([uploadBytes(ref(storage, path), full, meta), uploadBytes(ref(storage, thumbPath), thumb, meta)]);
-  const [url, thumbUrl] = await Promise.all([getDownloadURL(ref(storage, path)), getDownloadURL(ref(storage, thumbPath))]);
-  // A version marker so a replaced image isn't served from the old cache.
-  const v = `&v=${Date.now()}`;
-  return { backend: 'storage', url: url + v, thumbUrl: thumbUrl + v, path, thumbPath };
+  // A new file name each time, so a replaced picture is never served from an old cache.
+  const path = `${key}_${Date.now()}.jpg`;
+  await uploadBytes(ref(storage, path), await resizeImage(blob, MAX_SIDE, 0.8), {
+    contentType: 'image/jpeg',
+    cacheControl: 'public, max-age=31536000',
+  });
+  return { backend: 'storage', url: await getDownloadURL(ref(storage, path)), path };
 }
 
-/** A URL for showing the full-size image. */
-export async function fullImageUrl(img: StoredImage): Promise<string> {
-  if (img.backend !== 'database') return img.url;
-  const snap = await getDoc(doc(db, img.path));
-  return (snap.data()?.data as string | undefined) ?? img.thumbUrl;
-}
-
-/** The full-size image as a Blob (e.g. to send to the AI). */
+/** The picture as a Blob (e.g. to send to the AI). */
 export async function loadImageBlob(img: StoredImage): Promise<Blob> {
-  if (img.backend !== 'database') return getBlob(ref(storage, img.path));
-  return (await fetch(await fullImageUrl(img))).blob();
+  if (img.backend === 'storage') return getBlob(ref(storage, img.path));
+  return (await fetch(img.url)).blob();
 }
 
 export async function deleteImage(img: StoredImage) {
-  if (img.backend === 'database') {
-    await deleteDoc(doc(db, img.path)).catch(() => undefined);
-    return;
-  }
-  await Promise.all([img.path, img.thumbPath].map((p) => deleteObject(ref(storage, p)).catch(() => undefined)));
+  if (img.backend === 'storage') await deleteObject(ref(storage, img.path)).catch(() => undefined);
+  // 'database' pictures live inside the document and disappear with it.
 }

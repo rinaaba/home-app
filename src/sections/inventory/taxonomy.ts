@@ -32,3 +32,11 @@ export const DEFAULT_HOMES = [
   { id: 'evia', name: 'Evia', location: 'Greece', sortOrder: 2 },
   { id: 'deal', name: 'Deal', location: 'New Jersey, USA', sortOrder: 3 },
 ];
+
+/** Shown on the color tile of items without a picture. */
+export const CATEGORY_ICONS: Record<string, string> = {
+  Clothing: '👕', Shoes: '👟', Accessories: '👜', Kitchen: '🍳', Electronics: '🔌', Furniture: '🪑',
+  Linens: '🛏️', 'Bath and beauty': '🧴', Tools: '🔧', Cleaning: '🧹', 'Kids and toys': '🧸',
+  'Sports and outdoors': '⚽', Travel: '🧳', 'Books and media': '📚', Decor: '🖼️',
+  'Health and medicine': '💊', Documents: '📄',
+};

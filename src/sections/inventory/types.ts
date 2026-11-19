@@ -11,7 +11,13 @@ export interface Home {
   sortOrder: number;
 }
 
-export type CleanStatus = 'none' | 'pending' | 'ready' | 'failed';
+/**
+ * - none:    no picture (e.g. socks: a color tile is shown instead)
+ * - pending: the AI is making a picture
+ * - ready:   the AI picture is there
+ * - failed:  the AI picture didn't work; a small copy of the photo is shown instead
+ */
+export type ImageStatus = 'none' | 'pending' | 'ready' | 'failed';
 
 export interface Item {
   id: string;
@@ -20,20 +26,25 @@ export interface Item {
   room: string;
   category: string;
   subcategory: string;
+  /** Color in words, e.g. "Navy blue". */
+  color: string;
+  /** The same color as a hex code, used for the color tile, e.g. "#1f2a44". */
+  colorHex: string;
   owner: string;
   notes: string;
-  /** The photo you took. */
-  photo: StoredImage | null;
-  /** The AI-generated clean product-style image. */
-  clean: StoredImage | null;
-  cleanStatus: CleanStatus;
-  cleanRequestedAt: Timestamp | null;
-  /** Why the last clean image attempt failed, if it did. */
-  cleanError: string;
+  /** The one small picture: AI-made, or a low-res copy of the photo if the AI picture failed. */
+  image: StoredImage | null;
+  imageKind: 'ai' | 'photo' | null;
+  imageStatus: ImageStatus;
+  imageRequestedAt: Timestamp | null;
+  imageError: string;
   createdAt: Timestamp | null;
   updatedAt: Timestamp | null;
   createdBy: string;
 }
 
 /** The fields you fill in on the add/edit form. */
-export type ItemDetails = Pick<Item, 'name' | 'homeId' | 'room' | 'category' | 'subcategory' | 'owner' | 'notes'>;
+export type ItemDetails = Pick<
+  Item,
+  'name' | 'homeId' | 'room' | 'category' | 'subcategory' | 'color' | 'colorHex' | 'owner' | 'notes'
+>;

@@ -66,11 +66,26 @@ export function ItemForm({ value, onChange, onSubmit, submitLabel, busy, disable
           </label>
         </div>
 
-        <label>
-          Owner
-          <input list={`${id}-owners`} value={value.owner} onChange={(e) => set('owner', e.target.value)} placeholder="Who it belongs to" />
-          <datalist id={`${id}-owners`}>{owners.map((o) => <option key={o} value={o} />)}</datalist>
-        </label>
+        <div className="form-row">
+          <label>
+            Color
+            <div className="color-field">
+              <input
+                type="color"
+                value={value.colorHex || '#cccccc'}
+                onChange={(e) => set('colorHex', e.target.value)}
+                aria-label="Pick color"
+              />
+              <input value={value.color} onChange={(e) => set('color', e.target.value)} placeholder="e.g. Navy blue" />
+            </div>
+          </label>
+          <label>
+            Owner
+            <input list={`${id}-owners`} value={value.owner} onChange={(e) => set('owner', e.target.value)} placeholder="Who it belongs to" />
+            <datalist id={`${id}-owners`}>{owners.map((o) => <option key={o} value={o} />)}</datalist>
+          </label>
+        </div>
+
 
         <label>
           Notes
