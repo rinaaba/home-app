@@ -6,14 +6,11 @@ export const ACCENTS = ['sand', 'sea', 'pine', 'plum', 'coral', 'rose', 'gold', 
 export type Accent = (typeof ACCENTS)[number];
 /** Icons to choose from for a home, with a name for each type of place. */
 export const HOME_ICONS: { id: IconName; label: string }[] = [
-  { id: 'apartment', label: 'Apartment' },
   { id: 'house', label: 'House' },
   { id: 'city', label: 'City' },
   { id: 'vacation', label: 'Vacation' },
-  { id: 'summer', label: 'Summer' },
   { id: 'waves', label: 'Beach' },
   { id: 'mountain', label: 'Mountain' },
-  { id: 'cabin', label: 'Cabin' },
   { id: 'tree', label: 'Countryside' },
   { id: 'snow', label: 'Ski' },
 ];
@@ -53,9 +50,8 @@ export function HomeStylePicker({ accent, icon, onChange }: { accent: string; ic
         {HOME_ICONS.map(({ id, label }) => {
           const I = Icons[id];
           return (
-            <button type="button" key={id} className={`icon-choice ${id === icon ? 'on' : ''}`} onClick={() => onChange(accent, id)}>
+            <button type="button" key={id} className={`icon-choice ${id === icon ? 'on' : ''}`} onClick={() => onChange(accent, id)} aria-label={label} title={label}>
               <I />
-              <span>{label}</span>
             </button>
           );
         })}
