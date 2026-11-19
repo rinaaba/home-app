@@ -51,3 +51,9 @@ function friendlyError(err: unknown) {
   }
   return msg.slice(0, 200);
 }
+
+// Make AI pictures one at a time, so adding many items at once doesn't hit the AI's rate limit.
+let pictureQueue: Promise<void> = Promise.resolve();
+export function queueItemPicture(itemId: string, name: string, photo: Blob, previous: StoredImage | null) {
+  pictureQueue = pictureQueue.then(() => makeItemPicture(itemId, name, photo, previous));
+}

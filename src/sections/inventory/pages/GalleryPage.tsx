@@ -51,7 +51,7 @@ export function GalleryPage() {
           type="search"
           value={q}
           onChange={(e) => setParam('q', e.target.value)}
-          placeholder="Search all homes, e.g. where is the blender?"
+          placeholder="Search all homes, e.g. blender"
           aria-label="Search"
         />
         <Link to="add" className="btn primary add-btn">+ Add item</Link>

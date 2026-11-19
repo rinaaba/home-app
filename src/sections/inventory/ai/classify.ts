@@ -33,6 +33,17 @@ Pick the category and sub-category from this list when one fits. If nothing fits
 ${taxonomy}
 
 Use sentence case for every value. Keep the name short (2-4 words) and don't repeat the color in the name.`;
-  const g = await generateJson<Guess>(prompt, [photo], schema);
+  // The free plan allows only a few AI requests per minute; wait and retry when we hit that.
+  let g: Guess | undefined;
+  for (let attempt = 1; !g; attempt++) {
+    try {
+      g = await generateJson<Guess>(prompt, [photo], schema);
+    } catch (err) {
+      const msg = String((err as Error)?.message ?? err).toLowerCase();
+      const rateLimited = ['429', 'quota', 'resource_exhausted', 'rate'].some((w) => msg.includes(w));
+      if (!rateLimited || attempt >= 4) throw err;
+      await new Promise((r) => setTimeout(r, attempt * 20_000));
+    }
+  }
   return { ...g, colorHex: /^#[0-9a-f]{6}$/i.test(g.colorHex ?? '') ? g.colorHex : '' };
 }
