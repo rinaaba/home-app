@@ -30,7 +30,14 @@ export default defineConfig({
       },
       workbox: {
         navigateFallbackDenylist: [/^\/__/],
+        // The HEIC converter is big: download it only when someone adds an iPhone HEIC photo.
+        globIgnores: ['**/heic-to-*.js'],
         runtimeCaching: [
+          {
+            urlPattern: /\/assets\/heic-to-.*\.js$/,
+            handler: 'CacheFirst',
+            options: { cacheName: 'heic-converter', expiration: { maxEntries: 2 } },
+          },
           {
             // Item photos: keep a local copy so the gallery is fast and works offline.
             urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*/,

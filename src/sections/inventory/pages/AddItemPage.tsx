@@ -168,7 +168,7 @@ export function AddItemPage() {
 
       {/* Hidden file inputs. "capture" opens the camera directly on phones. */}
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { onFiles(e.target.files); e.target.value = ''; }} />
-      <input ref={libraryRef} type="file" accept="image/*" multiple hidden onChange={(e) => { onFiles(e.target.files); e.target.value = ''; }} />
+      <input ref={libraryRef} type="file" accept="image/*,.heic,.heif" multiple hidden onChange={(e) => { onFiles(e.target.files); e.target.value = ''; }} />
 
       {step === 'pick' && (
         <div className="pick">
@@ -193,7 +193,7 @@ export function AddItemPage() {
           {!isReady ? (
             <Spinner label="Looking at your photo…" />
           ) : current?.status === 'unreadable' ? (
-            <p className="error">This photo can’t be opened in this browser (often an iPhone HEIC photo on a non-Apple computer). Skip it, or try Safari.</p>
+            <p className="error">This photo couldn’t be opened. Skip it, or try saving it as a JPEG first.</p>
           ) : current?.status === 'failed' ? (
             <p className="note">Couldn’t guess the details this time. Please fill them in.</p>
           ) : current ? (
