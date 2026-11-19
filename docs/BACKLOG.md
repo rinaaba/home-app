@@ -16,4 +16,5 @@ Ideas and feature requests for later. Newest at the top of each list.
 ## To decide or set up later
 - Picture style for AI pictures (currently a simple flat illustration on white; see `src/sections/inventory/ai/picture.ts`)
 - Upgrade to the pay-as-you-go plan to turn on AI pictures (steps in `docs/SETUP.md` → Upgrade later)
-- App Check, to stop other websites from using the AI quota
+- **App Check — deadline Jan 21, 2027:** Firebase will turn on App Check enforcement for AI Logic automatically then,
+  and the AI would stop working without it. Set up with free reCAPTCHA v3 (the code is ready: `appCheckSiteKey` in `config.ts`).
