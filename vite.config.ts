@@ -9,6 +9,8 @@ export default defineConfig({
   base,
   // Shown at the bottom of Settings, so you can tell which version you have.
   define: { __BUILD_TIME__: JSON.stringify(new Date().toISOString()) },
+  // The cut-out engine loads its .wasm file next to itself; don't pre-bundle it in development.
+  optimizeDeps: { exclude: ['onnxruntime-web'] },
   plugins: [
     react(),
     VitePWA({
@@ -34,13 +36,19 @@ export default defineConfig({
       workbox: {
         navigateFallbackDenylist: [/^\/__/],
         // The HEIC converter is big: download it only when someone adds an iPhone HEIC photo.
-        globIgnores: ['**/heic-to-*.js'],
+        globIgnores: ['**/heic-to-*.js', '**/*.wasm', 'models/**'],
         runtimeCaching: [
           {
             // Fonts, so the app looks right offline too.
             urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/,
             handler: 'CacheFirst',
             options: { cacheName: 'fonts', expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 }, cacheableResponse: { statuses: [0, 200] } },
+          },
+          {
+            // The cut-out model and its engine: downloaded the first time a photo is added, then kept.
+            urlPattern: /\.(wasm|onnx)$/,
+            handler: 'CacheFirst',
+            options: { cacheName: 'cutout-model', expiration: { maxEntries: 4 } },
           },
           {
             urlPattern: /\/assets\/heic-to-.*\.js$/,

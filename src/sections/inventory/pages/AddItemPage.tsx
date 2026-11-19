@@ -3,6 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../core/auth/AuthProvider';
 import { resizeImage } from '../../../core/images/resize';
 import { cropToItem } from '../../../core/images/crop';
+import { cutOutItem, prepareCutout } from '../../../core/images/cutout';
+import { aiPictures } from '../../../core/firebase/config';
 import { Spinner } from '../../../core/ui/Spinner';
 import { Camera } from '../../../core/ui/Camera';
 import { useToast } from '../../../core/ui/toast';
@@ -28,6 +30,9 @@ interface Entry {
   /** The small product view that will be saved (cropped to the item). */
   thumb?: Blob;
   thumbUrl?: string;
+  /** Both versions, so you can switch: the cut-out (background removed) and the plain crop. */
+  cut?: { blob: Blob; url: string } | null;
+  crop?: { blob: Blob; url: string };
   guess?: Guess;
   error?: string;
   status: 'waiting' | 'looking' | 'ready' | 'failed' | 'unreadable';
@@ -70,7 +75,10 @@ export function AddItemPage() {
   // Free the photo previews when leaving the page.
   const queueRef = useRef(queue);
   queueRef.current = queue;
-  useEffect(() => () => queueRef.current.forEach((e) => { if (e.preview) URL.revokeObjectURL(e.preview); if (e.thumbUrl) URL.revokeObjectURL(e.thumbUrl); }), []);
+  useEffect(() => () => queueRef.current.forEach((e) => [e.preview, e.cut?.url, e.crop?.url].forEach((u) => u && URL.revokeObjectURL(u))), []);
+
+  // Start downloading the cut-out model as soon as the add screen opens.
+  useEffect(() => prepareCutout(), []);
 
   const patch = (i: number, changes: Partial<Entry>) =>
     setQueue((q) => q.map((e, j) => (j === i ? { ...e, ...changes } : e)));
@@ -89,14 +97,23 @@ export function AddItemPage() {
       }
       if (runRef.current !== run) return;
       patch(i, { photo, preview: URL.createObjectURL(photo) });
+      // The AI guesses the details while the device cuts the item out of the background, at the same time.
+      const cutting = cutOutItem(photo).catch((e) => { console.warn('Cut-out failed', e); return null; });
+      const pictures = async (box?: number[]) => {
+        const [cutBlob, cropBlob] = await Promise.all([cutting, cropToItem(photo, box).catch(() => undefined)]);
+        const cut = cutBlob ? { blob: cutBlob, url: URL.createObjectURL(cutBlob) } : null;
+        const crop = cropBlob ? { blob: cropBlob, url: URL.createObjectURL(cropBlob) } : undefined;
+        const pick = cut ?? crop; // the cut-out if it worked, otherwise the plain crop
+        return { cut, crop, thumb: pick?.blob, thumbUrl: pick?.url };
+      };
       try {
         const guess = await classifyPhoto(photo);
-        const thumb = await cropToItem(photo, guess.box).catch(() => undefined);
-        if (runRef.current === run) patch(i, { guess, thumb, thumbUrl: thumb && URL.createObjectURL(thumb), status: 'ready' });
+        const pics = await pictures(guess.box);
+        if (runRef.current === run) patch(i, { guess, ...pics, status: 'ready' });
       } catch (e) {
         console.error(e);
-        const thumb = await cropToItem(photo, undefined).catch(() => undefined);
-        if (runRef.current === run) patch(i, { status: 'failed', error: describeAiError(e), thumb, thumbUrl: thumb && URL.createObjectURL(thumb) });
+        const pics = await pictures(undefined);
+        if (runRef.current === run) patch(i, { status: 'failed', error: describeAiError(e), ...pics });
       }
     }
   };
@@ -156,7 +173,7 @@ export function AddItemPage() {
       await createItem(id, clean, fallback, user?.displayName ?? user?.email ?? '');
       saveLastHome(clean.homeId);
       // The photo itself is never kept. The AI picture is made in the background.
-      if (withPicture) queueItemPicture(id, clean.name, withPicture, fallback);
+      if (withPicture && aiPictures) queueItemPicture(id, clean.name, withPicture, fallback);
       const names = [...savedNames, clean.name];
       setSavedNames(names);
       if (queue.length) next(names);
@@ -226,7 +243,22 @@ export function AddItemPage() {
           {current?.thumbUrl && keepPicture ? (
             <div className="thumb-preview">
               <img src={current.thumbUrl} alt="The picture that will be saved" />
-              <span className="meta">This small picture is saved with the item. Your photo isn’t kept.</span>
+              <div className="thumb-side">
+                <span className="meta">This small picture is saved with the item. Your photo isn’t kept.</span>
+                {current.cut && current.crop && (
+                  <button
+                    type="button"
+                    className="link-btn small"
+                    onClick={() => {
+                      const useCut = current.thumb !== current.cut!.blob;
+                      const pick = useCut ? current.cut! : current.crop!;
+                      patch(index, { thumb: pick.blob, thumbUrl: pick.url });
+                    }}
+                  >
+                    {current.thumb === current.cut.blob ? 'use the photo’s background instead' : 'remove the background'}
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             current?.preview && <img className="preview" src={current.preview} alt="Your photo" />

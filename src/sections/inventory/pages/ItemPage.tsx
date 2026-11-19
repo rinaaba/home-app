@@ -8,6 +8,7 @@ import { deleteItem, moveItem, removeItemImage, replaceItemImage } from '../data
 import { resizeImage } from '../../../core/images/resize';
 import { cropToItem } from '../../../core/images/crop';
 import { useToast } from '../../../core/ui/toast';
+import { aiPictures } from '../../../core/firebase/config';
 import { HomeIcon, homeStyle } from '../homeStyle';
 import { galleryLink } from '../galleryMemory';
 
@@ -24,7 +25,7 @@ export function ItemPage() {
   if (!item) return <div className="page narrow"><p>This item doesn’t exist anymore.</p><Link to={galleryLink()}>Back to inventory</Link></div>;
 
   const pending = (item.imageStatus === 'pending' && !isStuck(item)) || working;
-  const canRetry = item.imageKind === 'photo' && !pending;
+  const canRetry = aiPictures && item.imageKind === 'photo' && !pending;
 
   const retry = async () => {
     setWorking(true);
@@ -83,11 +84,8 @@ export function ItemPage() {
           <ItemImage item={item} />
           <div className="photo-actions">
             {pending && <span className="muted">Making a picture…</span>}
-            {!pending && item.imageKind === 'photo' && (
-              <span className="muted">
-                Showing a small copy of your photo.
-                {item.imageStatus === 'failed' && item.imageError ? ` The AI picture didn’t work: ${item.imageError}` : ''}
-              </span>
+            {aiPictures && !pending && item.imageStatus === 'failed' && item.imageError && (
+              <span className="muted">The AI picture didn’t work: {item.imageError}</span>
             )}
             {canRetry && <button type="button" className="btn small" onClick={retry}>Try AI picture again</button>}
             {!pending && (

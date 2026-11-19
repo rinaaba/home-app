@@ -11,7 +11,7 @@ A family home app. Version 1 has one section: **Inventory** — what we own, and
 - Gallery of items, filter by home, category, sub-category
 - Search across all homes, or ask the AI in plain words ("how many shirts do I have in Deal?")
 - Quick add: take a photo → AI guesses name, category, sub-category, color and notes → you confirm
-- AI turns the photo into one small, simple picture; the photo itself is never kept
+- Each item gets one small product picture, made free on the device: the item is cut out of the photo (background removed) and centered on white; the photo itself is never kept
 - Pictures are optional (switch it off for socks): items without one show a color tile
 - Move an item to another home, edit, delete
 - Add, rename, archive homes
@@ -71,3 +71,6 @@ docs/SETUP.md                    step-by-step setup
 npm install
 npm run dev
 ```
+
+## Credits
+- On-device background removal uses the U²-Net (small) model by Xuebin Qin et al. ([U-2-Net](https://github.com/xuebinqin/U-2-Net), Apache-2.0), run with [ONNX Runtime Web](https://onnxruntime.ai) (MIT).

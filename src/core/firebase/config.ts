@@ -26,3 +26,9 @@ export const isConfigured = !firebaseConfig.apiKey.startsWith('PASTE_');
  *               (and doing the Storage step in docs/SETUP.md). New photos go to Storage; old ones keep working.
  */
 export const photoStorage: 'database' | 'storage' = 'database';
+
+/**
+ * AI-drawn product pictures. They need the pay-as-you-go plan (Google's free plan includes no picture generation),
+ * so they're off: the app makes a free cut-out on the device instead. Set to true after upgrading.
+ */
+export const aiPictures = false;

@@ -2,6 +2,7 @@ import {
   deleteDoc, doc, onSnapshot, serverTimestamp, setDoc, updateDoc, type DocumentData,
 } from 'firebase/firestore';
 import { currentFamily, fcol } from '../../../core/family/scope';
+import { aiPictures } from '../../../core/firebase/config';
 import { deleteImage, saveImage } from '../../../core/images/imageStore';
 import type { Item, ItemDetails, StoredImage } from '../types';
 
@@ -51,7 +52,7 @@ export async function createItem(id: string, details: ItemDetails, fallback: Sto
     ...details,
     image: fallback,
     imageKind: fallback ? 'photo' : null,
-    imageStatus: fallback ? 'pending' : 'none',
+    imageStatus: fallback ? (aiPictures ? 'pending' : 'ready') : 'none',
     imageRequestedAt: fallback ? serverTimestamp() : null,
     imageError: '',
     createdBy,

@@ -199,6 +199,7 @@ code { font-family: var(--mono); background: var(--card); padding: 1px 6px; bord
 
 /* Add: preview of the saved picture */
 .thumb-preview { display: flex; gap: 14px; align-items: center; margin-bottom: 12px; }
+.thumb-side { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .thumb-preview img { width: 140px; height: 140px; border-radius: var(--radius); border: 1px solid var(--border); background: #fff; flex-shrink: 0; }
 
 /* Add */
