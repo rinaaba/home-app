@@ -4,6 +4,7 @@ import { useAuth } from '../../../core/auth/AuthProvider';
 import { resizeImage } from '../../../core/images/resize';
 import { cropToItem } from '../../../core/images/crop';
 import { Spinner } from '../../../core/ui/Spinner';
+import { Camera } from '../../../core/ui/Camera';
 import { useToast } from '../../../core/ui/toast';
 import { useInventory } from '../InventoryContext';
 import { classifyPhoto, type Guess } from '../ai/classify';
@@ -40,6 +41,7 @@ export function AddItemPage() {
   const toast = useToast();
   const [params] = useSearchParams();
   const cameraRef = useRef<HTMLInputElement>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const libraryRef = useRef<HTMLInputElement>(null);
   const runRef = useRef(0); // bumps when starting over, to stop an old AI run
 
@@ -98,7 +100,7 @@ export function AddItemPage() {
     }
   };
 
-  const onFiles = (files: FileList | null) => {
+  const onFiles = (files: FileList | File[] | null) => {
     if (!files?.length) return;
     const entries: Entry[] = [...files].map((file) => ({ file, status: 'waiting' }));
     const run = ++runRef.current;
@@ -193,9 +195,18 @@ export function AddItemPage() {
         <p className="note">First add a home in <Link to="/settings">settings</Link>, so your things have somewhere to go.</p>
       )}
 
+      {cameraOpen && (
+        <Camera
+          onPhoto={(file) => { setCameraOpen(false); onFiles([file]); }}
+          onClose={() => setCameraOpen(false)}
+          // No camera access: use the phone's own camera screen instead.
+          onUnavailable={() => { setCameraOpen(false); cameraRef.current?.click(); }}
+        />
+      )}
+
       {step === 'pick' && (
         <div className="pick">
-          <button type="button" className="btn primary huge" onClick={() => cameraRef.current?.click()}>📷 Take a photo</button>
+          <button type="button" className="btn primary huge" onClick={() => setCameraOpen(true)}>📷 Take a photo</button>
           <button type="button" className="btn huge" onClick={() => libraryRef.current?.click()}>🖼️ Choose photos</button>
           <p className="muted center">You can choose many photos at once. The AI fills in each one and you check them one by one.</p>
           <button type="button" className="btn link" onClick={() => { setQueue([]); setFormFor(-1); setStep('details'); }}>Add without a photo</button>

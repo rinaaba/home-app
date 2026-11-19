@@ -330,3 +330,14 @@ dd { margin: 0; white-space: pre-wrap; }
 .toast-check { color: var(--ok); margin-right: 6px; font-weight: 700; }
 :root[data-theme='dark'] .toast-check { color: #2f7a4b; }
 .shell.has-nav .toast { bottom: calc(90px + env(safe-area-inset-bottom)); }
+
+/* In-app camera */
+.camera { position: fixed; inset: 0; z-index: 200; background: #000; display: flex; flex-direction: column; }
+.camera video { flex: 1; width: 100%; min-height: 0; object-fit: contain; background: #000; }
+.camera video.mirrored { transform: scaleX(-1); }
+.camera-wait { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-family: var(--mono); }
+.camera-bar { display: flex; align-items: center; justify-content: space-around; padding: 18px 24px calc(18px + env(safe-area-inset-bottom)); background: #000; }
+.shutter { width: 74px; height: 74px; border-radius: 50%; border: 5px solid #fff; background: #fff; box-shadow: inset 0 0 0 3px #000; cursor: pointer; }
+.shutter:disabled { opacity: 0.4; }
+.camera-side { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 50%; border: none; background: rgb(255 255 255 / 0.15); color: #fff; font-size: 1.4rem; cursor: pointer; }
+span.camera-side { background: none; }
