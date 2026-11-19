@@ -4,8 +4,7 @@ import { Spinner } from '../../../core/ui/Spinner';
 import { useInventory } from '../InventoryContext';
 import { isStuck, retryItemPicture } from '../ai/picture';
 import { ItemImage } from '../components/ItemImage';
-import { MoveDialog } from '../components/MoveDialog';
-import { deleteItem, removeItemImage, replaceItemImage } from '../data/items';
+import { deleteItem, moveItem, removeItemImage, replaceItemImage } from '../data/items';
 import { resizeImage } from '../../../core/images/resize';
 import { cropToItem } from '../../../core/images/crop';
 import { useToast } from '../../../core/ui/toast';
@@ -14,9 +13,8 @@ import { galleryLink } from '../galleryMemory';
 
 export function ItemPage() {
   const { id } = useParams();
-  const { items, homes, loading, homeName } = useInventory();
+  const { items, homes, activeHomes, loading, homeName } = useInventory();
   const navigate = useNavigate();
-  const [moving, setMoving] = useState(false);
   const [working, setWorking] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
@@ -120,14 +118,25 @@ export function ItemPage() {
             ))}
           </dl>
           <div className="actions">
-            <button type="button" className="btn primary big" onClick={() => setMoving(true)}>Move to another home</button>
+            <select
+              className="btn primary big move-select"
+              value=""
+              aria-label="Move to another home"
+              onChange={(e) => {
+                const to = e.target.value;
+                if (!to) return;
+                void moveItem(item.id, to).then(() => toast(`Moved to ${homeName(to)}`)).catch((err) => alert(`Couldn’t move: ${err.message}`));
+              }}
+            >
+              <option value="">Move to…</option>
+              {activeHomes.filter((h) => h.id !== item.homeId).map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
+            </select>
             <Link className="btn big" to="edit">Edit</Link>
             <button type="button" className="btn danger" onClick={remove}>Delete</button>
           </div>
         </div>
       </div>
 
-      {moving && <MoveDialog item={item} onClose={() => setMoving(false)} />}
     </div>
   );
 }
