@@ -28,6 +28,7 @@ export function isRateLimited(err: unknown) {
 export function describeAiError(err: unknown): string {
   if (err instanceof AiLimitReached) return err.message;
   const msg = errText(err);
+  if (/must enforce firebase app check/i.test(msg)) return 'AI pictures need App Check to be set up and enforced in Firebase. Your cropped picture is kept.';
   if (/app check/i.test(msg)) return 'The AI refused the app’s App Check pass (Firebase → App Check). Tell whoever set up the app.';
   if (/\[403|permission|api has not been used|disabled/i.test(msg)) return 'The AI isn’t turned on for this Firebase project yet (Firebase → AI Logic → Get started).';
   if (isRateLimited(err)) return 'The AI’s free limit was reached. Try again in a minute, or tomorrow if it keeps happening.';
