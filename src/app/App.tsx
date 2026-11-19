@@ -32,10 +32,10 @@ function Gate() {
         <div className="card signin">
           <h1>No access yet</h1>
           <p>
-            You're signed in as <strong>{user.email}</strong>, but this account isn't on the family list.
+            You're signed in as <strong>{user.email}</strong>, but this account hasn't been invited yet.
           </p>
           <p className="muted">
-            Add this email to <code>config/access → emails</code> in the Firebase console, then reload.
+            Ask the person who invited you to invite this exact address, or sign in with the account they invited.
           </p>
           <div className="row">
             <button type="button" className="btn" onClick={() => location.reload()}>Reload</button>
