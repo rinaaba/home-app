@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Icons } from '../../../core/ui/icons';
 import { Spinner } from '../../../core/ui/Spinner';
@@ -7,7 +7,8 @@ import { ItemCard } from '../components/ItemCard';
 import { HomeSwitch } from '../components/HomeSwitch';
 import { homeStyle } from '../homeStyle';
 import { searchItems } from '../search';
-import { askInventory, type AiAnswer } from '../ai/ask';
+import { askInventory } from '../ai/ask';
+import { galleryMemory, type AiState } from '../galleryMemory';
 import { describeAiError } from '../../../core/ai/gemini';
 
 export function GalleryPage() {
@@ -19,7 +20,17 @@ export function GalleryPage() {
   const sub = params.get('sub') ?? '';
   const owner = params.get('owner') ?? '';
   const [showFilters, setShowFilters] = useState(Boolean(cat || sub || owner));
-  const [ai, setAi] = useState<{ question: string; loading: boolean; result?: AiAnswer; error?: string } | null>(null);
+  const [ai, setAiState] = useState<AiState | null>(() => galleryMemory.ai);
+  const setAi = (next: AiState | null | ((a: AiState | null) => AiState | null)) =>
+    setAiState((prev) => {
+      const value = typeof next === 'function' ? next(prev) : next;
+      galleryMemory.ai = value;
+      return value;
+    });
+
+  // Remember filters/search, and the scroll position when leaving, so Back from an item returns here.
+  useEffect(() => { galleryMemory.search = params.toString(); }, [params]);
+  useEffect(() => () => { galleryMemory.scroll = window.scrollY; }, []);
   const aiCurrent = ai && ai.question === q.trim() ? ai : null; // an answer only counts for the question it was asked for
 
   const ask = async () => {
@@ -40,6 +51,15 @@ export function GalleryPage() {
     reset.forEach((r) => next.delete(r));
     setParams(next, { replace: true });
   };
+
+  const [restored, setRestored] = useState(false);
+  useEffect(() => {
+    if (loading || restored) return;
+    setRestored(true);
+    if (galleryMemory.scroll && params.toString() === galleryMemory.search) {
+      requestAnimationFrame(() => window.scrollTo({ top: galleryMemory.scroll }));
+    }
+  }, [loading, restored, params]);
 
   const archivedIds = useMemo(() => new Set(homes.filter((h) => h.archived).map((h) => h.id)), [homes]);
 

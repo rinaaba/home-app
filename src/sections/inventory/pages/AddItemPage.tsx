@@ -14,6 +14,7 @@ import { ItemForm } from '../components/ItemForm';
 import { createItem, newItemId, saveItemImage } from '../data/items';
 import type { ItemDetails } from '../types';
 import { homeStyle } from '../homeStyle';
+import { galleryLink } from '../galleryMemory';
 
 const LAST_HOME_KEY = 'inventory.lastHomeId';
 const readLastHome = () => { try { return localStorage.getItem(LAST_HOME_KEY) ?? ''; } catch { return ''; } };
@@ -135,7 +136,7 @@ export function AddItemPage() {
     runRef.current++;
     if (names.length === 1) toast(`Saved “${names[0]}”`);
     else if (names.length > 1) toast(`Saved ${names.length} items`);
-    navigate('..');
+    navigate(galleryLink());
   };
 
   const next = (names = savedNames) => {
@@ -183,7 +184,7 @@ export function AddItemPage() {
   return (
     <div className={`page narrow accent-${homeStyle(homes.find((h) => h.id === details.homeId)).accent}`}>
       <div className="page-head">
-        <Link to=".." className="btn link">← Back</Link>
+        <Link to={galleryLink()} className="btn link">← Back</Link>
         <h1>{many && step === 'details' ? `Photo ${index + 1} of ${queue.length}` : 'Add item'}</h1>
       </div>
 

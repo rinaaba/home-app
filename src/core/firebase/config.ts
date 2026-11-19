@@ -15,10 +15,7 @@ export const firebaseConfig = {
  * reCAPTCHA Enterprise site key for Firebase App Check (stops other websites from using the AI).
  * It stops other websites from using your AI quota. Leave empty to skip.
  */
-// Turned off for now: the key below gave invalid App Check tokens, which the AI rejects.
-// Put a working reCAPTCHA Enterprise key here before Jan 21, 2027 (see docs/BACKLOG.md).
-// Previous key: 6LcPvSguAAAAAMyo0YBCc7t-mRI_AEADtOLbegCR
-export const appCheckSiteKey = '';
+export const appCheckSiteKey = '6LfMhCguAAAAAMxecESnp89xksyALdAii4qvkRpP';
 
 export const isConfigured = !firebaseConfig.apiKey.startsWith('PASTE_');
 

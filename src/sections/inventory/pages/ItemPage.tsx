@@ -10,6 +10,7 @@ import { resizeImage } from '../../../core/images/resize';
 import { cropToItem } from '../../../core/images/crop';
 import { useToast } from '../../../core/ui/toast';
 import { HomeIcon, homeStyle } from '../homeStyle';
+import { galleryLink } from '../galleryMemory';
 
 export function ItemPage() {
   const { id } = useParams();
@@ -22,7 +23,7 @@ export function ItemPage() {
 
   if (loading) return <Spinner label="Loading" />;
   const item = items.find((i) => i.id === id);
-  if (!item) return <div className="page narrow"><p>This item doesn’t exist anymore.</p><Link to="../.." relative="path">Back to inventory</Link></div>;
+  if (!item) return <div className="page narrow"><p>This item doesn’t exist anymore.</p><Link to={galleryLink()}>Back to inventory</Link></div>;
 
   const pending = (item.imageStatus === 'pending' && !isStuck(item)) || working;
   const canRetry = item.imageKind === 'photo' && !pending;
@@ -60,7 +61,7 @@ export function ItemPage() {
   const remove = async () => {
     if (!confirm(`Delete “${item.name}”? This can’t be undone.`)) return;
     await deleteItem(item);
-    navigate('../..', { relative: 'path' });
+    navigate(galleryLink());
   };
 
   const rows: [string, string][] = [
@@ -76,7 +77,7 @@ export function ItemPage() {
   return (
     <div className={`page item-page accent-${homeStyle(homes.find((h) => h.id === item.homeId)).accent}`}>
       <div className="page-head">
-        <Link to="../.." relative="path" className="btn link">← Back</Link>
+        <Link to={galleryLink()} className="btn link">← Back</Link>
       </div>
 
       <div className="item-layout">
