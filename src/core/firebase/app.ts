@@ -24,4 +24,5 @@ export const db = initializeFirestore(app, {
 
 export const storage = getStorage(app);
 
-export const ai = getAI(app, { backend: new GoogleAIBackend() });
+// One-time App Check passes for each AI request (needed for App Check's replay protection).
+export const ai = getAI(app, { backend: new GoogleAIBackend(), useLimitedUseAppCheckTokens: true });
