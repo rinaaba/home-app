@@ -77,3 +77,10 @@ export async function deleteItem(item: Item) {
   await deleteDoc(doc(itemsCol(), item.id));
   if (item.image) await deleteImage(item.image);
 }
+
+/** Use a picture you made elsewhere (e.g. in the Gemini app) as the item's picture. */
+export async function replaceItemImage(item: Item, picture: Blob) {
+  const image = await saveImage(`families/${currentFamily()}/items/${item.id}/image`, picture);
+  await updateItem(item.id, { image, imageKind: 'own', imageStatus: 'ready', imageError: '' });
+  if (item.image) await deleteImage(item.image);
+}

@@ -37,7 +37,8 @@ export interface Item {
   notes: string;
   /** The one small picture: AI-made, or a low-res copy of the photo if the AI picture failed. */
   image: StoredImage | null;
-  imageKind: 'ai' | 'photo' | null;
+  /** ai = made by the AI; photo = cropped from your photo; own = a picture you uploaded (e.g. made in the Gemini app). */
+  imageKind: 'ai' | 'photo' | 'own' | null;
   imageStatus: ImageStatus;
   imageRequestedAt: Timestamp | null;
   imageError: string;

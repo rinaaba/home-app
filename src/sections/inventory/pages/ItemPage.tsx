@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Spinner } from '../../../core/ui/Spinner';
 import { useInventory } from '../InventoryContext';
 import { isStuck, retryItemPicture } from '../ai/picture';
 import { ItemImage } from '../components/ItemImage';
 import { MoveDialog } from '../components/MoveDialog';
-import { deleteItem, removeItemImage } from '../data/items';
+import { deleteItem, removeItemImage, replaceItemImage } from '../data/items';
+import { resizeImage } from '../../../core/images/resize';
+import { cropToItem } from '../../../core/images/crop';
+import { useToast } from '../../../core/ui/toast';
 import { HomeIcon, homeStyle } from '../homeStyle';
 
 export function ItemPage() {
@@ -14,6 +17,8 @@ export function ItemPage() {
   const navigate = useNavigate();
   const [moving, setMoving] = useState(false);
   const [working, setWorking] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const toast = useToast();
 
   if (loading) return <Spinner label="Loading" />;
   const item = items.find((i) => i.id === id);
@@ -28,6 +33,21 @@ export function ItemPage() {
       await retryItemPicture(item);
     } catch (e) {
       alert(`Couldn’t make a picture: ${(e as Error).message}`);
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  /** Use a picture as it is, e.g. one made in the Gemini app: fitted into a small white square. */
+  const replacePicture = async (file: File | undefined) => {
+    if (!file) return;
+    setWorking(true);
+    try {
+      const picture = await cropToItem(await resizeImage(file, 1024), undefined);
+      await replaceItemImage(item, picture);
+      toast('Picture saved');
+    } catch (e) {
+      alert(`Couldn’t use that picture: ${(e as Error).message}`);
     } finally {
       setWorking(false);
     }
@@ -71,7 +91,13 @@ export function ItemPage() {
               </span>
             )}
             {canRetry && <button type="button" className="btn small" onClick={retry}>Try AI picture again</button>}
+            {!pending && (
+              <button type="button" className="btn small" onClick={() => fileRef.current?.click()}>
+                {item.image ? 'Replace picture' : 'Add picture'}
+              </button>
+            )}
             {item.image && !pending && <button type="button" className="btn small" onClick={removePicture}>Remove picture</button>}
+            <input ref={fileRef} type="file" accept="image/*,.heic,.heif" hidden onChange={(e) => { void replacePicture(e.target.files?.[0]); e.target.value = ''; }} />
           </div>
         </div>
 

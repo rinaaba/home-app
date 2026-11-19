@@ -4,4 +4,5 @@
  * To switch models, change the order or add a name at the top.
  */
 export const TEXT_MODELS = ['gemini-3-flash', 'gemini-3-flash-preview', 'gemini-2.5-flash'];
-export const IMAGE_MODELS = ['gemini-3.1-flash-image', 'gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'];
+// The lite model is tried first: it's the cheapest and may work on the free plan.
+export const IMAGE_MODELS = ['gemini-3.1-flash-lite-image', 'gemini-3.1-flash-lite-image-preview', 'gemini-3.1-flash-image', 'gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'];
