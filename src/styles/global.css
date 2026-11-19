@@ -227,6 +227,10 @@ code { font-family: var(--mono); background: var(--card); padding: 1px 6px; bord
 .add-person { display: flex; gap: 8px; margin-top: 12px; }
 .add-person input { flex: 1; min-width: 0; min-height: var(--tap); padding: 0 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--input); color: var(--text); font: inherit; }
 
+.order-btns { display: inline-flex; gap: 4px; }
+.square-btn.small { width: 36px; height: 36px; font-size: 1rem; color: var(--muted); }
+.square-btn:disabled { opacity: 0.35; cursor: default; }
+
 /* Item detail */
 .item-layout { display: grid; gap: 20px; }
 @media (min-width: 800px) { .item-layout { grid-template-columns: minmax(300px, 1fr) 1fr; align-items: start; } }

@@ -41,7 +41,7 @@ src/
   sections/
     inventory/             everything for the inventory section
       index.tsx            section definition + its pages
-      types.ts, taxonomy.ts (categories, default rooms and homes)
+      types.ts, taxonomy.ts (categories, default homes)
       data/                reading/writing homes and items
       ai/                  photo guessing + AI picture (style text lives in picture.ts)
       pages/, components/

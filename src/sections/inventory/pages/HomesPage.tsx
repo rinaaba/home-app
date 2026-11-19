@@ -7,7 +7,7 @@ import { savePeople } from '../data/people';
 import { ACCENTS, HOME_ICONS, homeStyle } from '../homeStyle';
 import type { Home } from '../types';
 
-function HomeRow({ home, count }: { home: Home; count: number }) {
+function HomeRow({ home, count, onUp, onDown }: { home: Home; count: number; onUp?: () => void; onDown?: () => void }) {
   const style = homeStyle(home);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(home.name);
@@ -60,6 +60,12 @@ function HomeRow({ home, count }: { home: Home; count: number }) {
         <div className="meta">{[home.location, `${count} ${count === 1 ? 'item' : 'items'}`].filter(Boolean).join(' · ')}</div>
       </div>
       <div className="row">
+        {(onUp || onDown) && (
+          <span className="order-btns">
+            <button type="button" className="square-btn small" onClick={onUp} disabled={!onUp} aria-label={`Move ${home.name} up`}>↑</button>
+            <button type="button" className="square-btn small" onClick={onDown} disabled={!onDown} aria-label={`Move ${home.name} down`}>↓</button>
+          </span>
+        )}
         <button type="button" className="btn small" onClick={() => setEditing(true)}>Edit</button>
         <button type="button" className={`btn small ${home.archived ? '' : 'danger'}`} onClick={() => updateHome(home.id, { archived: !home.archived })}>
           {home.archived ? 'Restore' : 'Archive'}
@@ -112,6 +118,13 @@ export function HomesPage() {
   const archived = homes.filter((h) => h.archived);
   const countFor = (id: string) => items.filter((i) => i.homeId === id).length;
 
+  /** Swap a home with its neighbor. The first home is listed first and is the default for new items. */
+  const move = (i: number, dir: -1 | 1) => {
+    const order = [...active];
+    [order[i], order[i + dir]] = [order[i + dir], order[i]];
+    order.forEach((h, n) => { if (h.sortOrder !== n + 1) void updateHome(h.id, { sortOrder: n + 1 }); });
+  };
+
   const add = async () => {
     if (!name.trim()) return;
     const maxOrder = Math.max(0, ...homes.map((h) => h.sortOrder ?? 0));
@@ -128,8 +141,17 @@ export function HomesPage() {
       </div>
       <h1>Homes and people</h1>
       <h2>Homes</h2>
+      <p className="meta">The first home is listed first and is picked for new items. Use the arrows to change the order.</p>
       <ul className="card-list">
-        {active.map((h) => <HomeRow key={h.id} home={h} count={countFor(h.id)} />)}
+        {active.map((h, i) => (
+          <HomeRow
+            key={h.id}
+            home={h}
+            count={countFor(h.id)}
+            onUp={i > 0 ? () => move(i, -1) : undefined}
+            onDown={i < active.length - 1 ? () => move(i, 1) : undefined}
+          />
+        ))}
       </ul>
 
       {adding ? (
