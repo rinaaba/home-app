@@ -7,7 +7,7 @@ export function ItemCard({ item, place }: { item: Item; place: string }) {
     <Link to={`item/${item.id}`} className="item-card">
       <div className="item-img-wrap">
         <ItemImage item={item} />
-        {item.imageStatus === 'pending' && <span className="badge">Making picture…</span>}
+        {item.imageStatus === 'pending' && <span className="badge">making picture…</span>}
       </div>
       <div className="item-card-body">
         <div className="item-name">{item.name || 'Untitled'}</div>

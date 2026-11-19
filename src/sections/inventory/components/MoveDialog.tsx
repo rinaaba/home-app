@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { Modal } from '../../../core/ui/Modal';
 import { useInventory } from '../InventoryContext';
 import { moveItem } from '../data/items';
+import { HomeSwitch } from './HomeSwitch';
+import { homeStyle } from '../homeStyle';
 import type { Item } from '../types';
 
 export function MoveDialog({ item, onClose }: { item: Item; onClose: () => void }) {
-  const { activeHomes, roomsFor } = useInventory();
+  const { activeHomes, homes, roomsFor } = useInventory();
   const [homeId, setHomeId] = useState(activeHomes.find((h) => h.id !== item.homeId)?.id ?? item.homeId);
   const [room, setRoom] = useState('');
   const [busy, setBusy] = useState(false);
@@ -23,20 +25,14 @@ export function MoveDialog({ item, onClose }: { item: Item; onClose: () => void 
 
   return (
     <Modal title={`Move ${item.name.toLowerCase()}`} onClose={onClose}>
-      <p className="muted">Where is it now?</p>
-      <div className="chips">
-        {activeHomes.map((h) => (
-          <button key={h.id} className={`chip big ${h.id === homeId ? 'on' : ''}`} onClick={() => setHomeId(h.id)}>
-            {h.name}
-          </button>
-        ))}
-      </div>
-      <label className="form">
+      <p className="label">Where is it now?</p>
+      <HomeSwitch homes={activeHomes} value={homeId} onChange={setHomeId} />
+      <div className="form"><label>
         Room
         <input list="move-rooms" value={room} onChange={(e) => setRoom(e.target.value)} placeholder="Optional" />
         <datalist id="move-rooms">{roomsFor(homeId).map((r) => <option key={r} value={r} />)}</datalist>
-      </label>
-      <button className="btn primary big" onClick={save} disabled={busy}>{busy ? 'Moving…' : 'Move item'}</button>
+      </label></div>
+      <button className={`btn primary big accent-${homeStyle(homes.find((h) => h.id === homeId)).accent}`} onClick={save} disabled={busy}>{busy ? 'Moving…' : 'Move item'}</button>
     </Modal>
   );
 }

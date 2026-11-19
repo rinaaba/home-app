@@ -9,6 +9,7 @@ import { queueItemPicture } from '../ai/picture';
 import { ItemForm } from '../components/ItemForm';
 import { createItem, newItemId, saveItemImage } from '../data/items';
 import type { ItemDetails } from '../types';
+import { homeStyle } from '../homeStyle';
 
 const LAST_HOME_KEY = 'inventory.lastHomeId';
 const readLastHome = () => { try { return localStorage.getItem(LAST_HOME_KEY) ?? ''; } catch { return ''; } };
@@ -26,7 +27,7 @@ interface Entry {
 type Step = 'pick' | 'details' | 'done';
 
 export function AddItemPage() {
-  const { activeHomes } = useInventory();
+  const { activeHomes, homes } = useInventory();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -160,7 +161,7 @@ export function AddItemPage() {
   const many = queue.length > 1;
 
   return (
-    <div className="page narrow">
+    <div className={`page narrow accent-${homeStyle(homes.find((h) => h.id === details.homeId)).accent}`}>
       <div className="page-head">
         <Link to=".." className="btn link">← Back</Link>
         <h1>{many && step === 'details' ? `Photo ${index + 1} of ${queue.length}` : 'Add item'}</h1>

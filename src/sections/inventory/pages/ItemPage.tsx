@@ -6,10 +6,11 @@ import { isStuck, retryItemPicture } from '../ai/picture';
 import { ItemImage } from '../components/ItemImage';
 import { MoveDialog } from '../components/MoveDialog';
 import { deleteItem, removeItemImage } from '../data/items';
+import { HomeIcon, homeStyle } from '../homeStyle';
 
 export function ItemPage() {
   const { id } = useParams();
-  const { items, loading, homeName } = useInventory();
+  const { items, homes, loading, homeName } = useInventory();
   const navigate = useNavigate();
   const [moving, setMoving] = useState(false);
   const [working, setWorking] = useState(false);
@@ -54,7 +55,7 @@ export function ItemPage() {
   ];
 
   return (
-    <div className="page item-page">
+    <div className={`page item-page accent-${homeStyle(homes.find((h) => h.id === item.homeId)).accent}`}>
       <div className="page-head">
         <Link to="../.." relative="path" className="btn link">← Back</Link>
       </div>
@@ -76,6 +77,10 @@ export function ItemPage() {
         </div>
 
         <div className="item-info">
+          <div className="eyebrow">
+            <HomeIcon home={homes.find((h) => h.id === item.homeId)} />
+            {[homeName(item.homeId), item.room].filter(Boolean).join(' · ')}
+          </div>
           <h1>{item.name}</h1>
           <dl>
             {rows.filter(([, v]) => v).map(([k, v]) => (

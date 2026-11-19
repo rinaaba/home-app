@@ -9,6 +9,10 @@ export interface Home {
   location: string;
   archived: boolean;
   sortOrder: number;
+  /** Color name, e.g. "sand" (optional; a default is picked per home). */
+  accent?: string;
+  /** Icon name, e.g. "waves" (optional). */
+  icon?: string;
 }
 
 /**

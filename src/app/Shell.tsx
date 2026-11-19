@@ -1,28 +1,26 @@
-import { useState } from 'react';
 import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { useAuth } from '../core/auth/AuthProvider';
+import { Icons } from '../core/ui/icons';
+import { useTheme } from '../core/ui/theme';
 import { sections } from './sections';
 
 export function Shell() {
-  const { user, signOut } = useAuth();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const { firstName, user, signOut } = useAuth();
+  const { theme, toggle } = useTheme();
   const showNav = sections.length > 1;
 
   return (
     <div className={`shell ${showNav ? 'has-nav' : ''}`}>
       <header className="topbar">
-        <span className="brand">Home</span>
-        <div className="account">
-          <button className="avatar-btn" onClick={() => setMenuOpen((o) => !o)} aria-label="Account">
-            {user?.photoURL ? <img src={user.photoURL} alt="" referrerPolicy="no-referrer" /> : <span>{user?.displayName?.[0] ?? '?'}</span>}
-          </button>
-          {menuOpen && (
-            <div className="menu" onMouseLeave={() => setMenuOpen(false)}>
-              <div className="menu-info">{user?.displayName}<br /><small>{user?.email}</small></div>
-              <button onClick={signOut}>Sign out</button>
-            </div>
-          )}
+        <div>
+          <div className="brand">Home</div>
+          <div className="signed-in">
+            signed in as {firstName || user?.email} · <button className="link-btn" onClick={signOut}>sign out</button>
+          </div>
         </div>
+        <button className="square-btn" onClick={toggle} aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}>
+          {theme === 'dark' ? <Icons.sun /> : <Icons.moon />}
+        </button>
       </header>
 
       {showNav && (

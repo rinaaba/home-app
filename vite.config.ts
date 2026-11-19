@@ -18,8 +18,8 @@ export default defineConfig({
         description: 'Our family home app',
         display: 'standalone',
         orientation: 'any',
-        background_color: '#f6f4ef',
-        theme_color: '#2f5d50',
+        background_color: '#f0f4f7',
+        theme_color: '#f0f4f7',
         start_url: '.',
         scope: '.',
         icons: [
@@ -33,6 +33,12 @@ export default defineConfig({
         // The HEIC converter is big: download it only when someone adds an iPhone HEIC photo.
         globIgnores: ['**/heic-to-*.js'],
         runtimeCaching: [
+          {
+            // Fonts, so the app looks right offline too.
+            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/,
+            handler: 'CacheFirst',
+            options: { cacheName: 'fonts', expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 }, cacheableResponse: { statuses: [0, 200] } },
+          },
           {
             urlPattern: /\/assets\/heic-to-.*\.js$/,
             handler: 'CacheFirst',
