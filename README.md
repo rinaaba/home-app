@@ -3,7 +3,7 @@
 A family home app. Version 1 has one section: **Inventory** — what we own, and in which home
 (Tel Aviv, Evia, Deal). Built to grow: lists, tasks, a calendar and more can be added as new sections.
 
-👉 **First time? Follow [docs/SETUP.md](docs/SETUP.md).**
+👉 **First time? Follow [docs/SETUP.md](docs/SETUP.md).** Ideas for later: [docs/BACKLOG.md](docs/BACKLOG.md).
 
 ## What it does
 - Sign in with Google (only emails on the family list get in), shared data for everyone in the family
