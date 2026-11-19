@@ -1,4 +1,4 @@
-import { addDoc, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { addDoc, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { fcol } from '../../../core/family/scope';
 import type { Home } from '../types';
 
@@ -12,10 +12,14 @@ export function subscribeHomes(cb: (homes: Home[]) => void, onError: (e: Error) 
   );
 }
 
-export function addHome(name: string, location: string, sortOrder: number) {
-  return addDoc(homesCol(), { name, location, sortOrder, archived: false, createdAt: serverTimestamp() });
+export function addHome(name: string, location: string, sortOrder: number, accent: string, icon: string) {
+  return addDoc(homesCol(), { name, location, sortOrder, accent, icon, archived: false, createdAt: serverTimestamp() });
 }
 
 export function updateHome(id: string, changes: Partial<Omit<Home, 'id'>>) {
   return updateDoc(doc(homesCol(), id), changes);
+}
+
+export function deleteHome(id: string) {
+  return deleteDoc(doc(homesCol(), id));
 }

@@ -3,12 +3,14 @@ import { Icons } from '../../../core/ui/icons';
 import { useInventory } from '../InventoryContext';
 import { addHome, updateHome } from '../data/homes';
 import { savePeople } from '../data/people';
-import { ACCENTS, HOME_ICONS, homeStyle } from '../homeStyle';
+import { ACCENTS, HomeStylePicker, homeStyle } from '../homeStyle';
 import type { Home } from '../types';
+import { DeleteHomeDialog } from '../components/DeleteHomeDialog';
 
 function HomeRow({ home, count, onUp, onDown }: { home: Home; count: number; onUp?: () => void; onDown?: () => void }) {
   const style = homeStyle(home);
   const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [name, setName] = useState(home.name);
   const [location, setLocation] = useState(home.location);
   const [accent, setAccent] = useState<string>(style.accent);
@@ -28,23 +30,13 @@ function HomeRow({ home, count, onUp, onDown }: { home: Home; count: number; onU
             <label>Name<input value={name} onChange={(e) => setName(e.target.value)} /></label>
             <label>Location<input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Optional" /></label>
           </div>
-          <div className="label">Color</div>
-          <div className="pickers">
-            {ACCENTS.map((a) => (
-              <button type="button" key={a} className={`swatch-btn accent-${a} ${a === accent ? 'on' : ''}`} onClick={() => setAccent(a)} aria-label={a} />
-            ))}
-          </div>
-          <div className="label">Icon</div>
-          <div className="pickers">
-            {HOME_ICONS.map((i) => {
-              const I = Icons[i];
-              return <button type="button" key={i} className={`square-btn ${i === icon ? 'on' : ''}`} onClick={() => setIcon(i)} aria-label={i}><I /></button>;
-            })}
-          </div>
+          <HomeStylePicker accent={accent} icon={icon} onChange={(a, i) => { setAccent(a); setIcon(i); }} />
           <div className="button-row">
             <button type="button" className="btn primary grow" onClick={save}>Save</button>
             <button type="button" className="square-btn" onClick={() => setEditing(false)} aria-label="Cancel"><Icons.close /></button>
           </div>
+          <button type="button" className="link-btn delete-link" onClick={() => setDeleting(true)}>delete this home</button>
+          {deleting && <DeleteHomeDialog home={home} onClose={() => setDeleting(false)} />}
         </div>
       </li>
     );
@@ -113,6 +105,8 @@ export function InventorySettings() {
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [adding, setAdding] = useState(false);
+  const [newAccent, setNewAccent] = useState<string>(ACCENTS[homes.length % ACCENTS.length]);
+  const [newIcon, setNewIcon] = useState<string>('house');
   const [showArchived, setShowArchived] = useState(false);
   const active = homes.filter((h) => !h.archived);
   const archived = homes.filter((h) => h.archived);
@@ -128,7 +122,7 @@ export function InventorySettings() {
   const add = async () => {
     if (!name.trim()) return;
     const maxOrder = Math.max(0, ...homes.map((h) => h.sortOrder ?? 0));
-    await addHome(name.trim(), location.trim(), maxOrder + 1);
+    await addHome(name.trim(), location.trim(), maxOrder + 1, newAccent, newIcon);
     setName('');
     setLocation('');
     setAdding(false);
@@ -156,8 +150,9 @@ export function InventorySettings() {
             <label>Name<input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Haifa" autoFocus /></label>
             <label>Location<input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Optional" /></label>
           </div>
+          <HomeStylePicker accent={newAccent} icon={newIcon} onChange={(a, i) => { setNewAccent(a); setNewIcon(i); }} />
           <div className="button-row">
-            <button type="button" className="btn primary grow" onClick={add} disabled={!name.trim()}>Add home</button>
+            <button type="button" className={`btn primary grow accent-${newAccent}`} onClick={add} disabled={!name.trim()}>Add home</button>
             <button type="button" className="square-btn" onClick={() => setAdding(false)} aria-label="Cancel"><Icons.close /></button>
           </div>
         </div>
