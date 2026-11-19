@@ -7,10 +7,13 @@ const base = process.env.BASE_PATH || '/';
 
 export default defineConfig({
   base,
+  // Shown at the bottom of Settings, so you can tell which version you have.
+  define: { __BUILD_TIME__: JSON.stringify(new Date().toISOString()) },
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: false, // registered in src/core/updates.ts, which also checks for new versions
       includeAssets: ['icons/icon.svg'],
       manifest: {
         name: 'Home',

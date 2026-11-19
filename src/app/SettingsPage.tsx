@@ -7,6 +7,7 @@ import { Icons } from '../core/ui/icons';
 import { getDailyLimit, subscribeTodayUsage } from '../core/ai/quota';
 import { useToast } from '../core/ui/toast';
 import { sections } from './sections';
+import { buildLabel } from '../core/updates';
 
 const APP_URL = `${location.origin}${location.pathname}`;
 
@@ -184,6 +185,7 @@ export function SettingsPage() {
       <p className="meta center app-link">
         <Icons.house /> Share the app: {APP_URL}
       </p>
+      <p className="meta center">version {buildLabel}</p>
     </div>
   );
 }
