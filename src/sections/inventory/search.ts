@@ -9,8 +9,14 @@ export function searchItems(items: Item[], text: string, homeName: (id: string) 
   const words = normalize(text).replace(/[?!.,'"]/g, ' ').split(/\s+/).filter((w) => w && !STOP_WORDS.has(w));
   if (!words.length) return items;
   return items.filter((it) => {
-    const hay = normalize([it.name, it.color, it.category, it.subcategory, it.owner, it.notes, homeName(it.homeId)].join(' '));
+    // Match the start of words, so "rina" finds Rina but not Orina, and "shirt" finds "t-shirt".
+    const hay = normalize([it.name, it.color, it.category, it.subcategory, it.notes, homeName(it.homeId)].join(' '))
+      .split(/[^a-z0-9\u0590-\u05ff]+/)
+      .filter(Boolean);
+    // Owner names must match exactly, so "or" finds Or but not Orina.
+    const owner = normalize(it.owner);
+    const has = (w: string) => w === owner || hay.some((h) => h.startsWith(w));
     // Simple plural handling: "blenders" also finds "blender".
-    return words.every((w) => hay.includes(w) || (w.length > 3 && w.endsWith('s') && hay.includes(w.slice(0, -1))));
+    return words.every((w) => has(w) || (w.length > 3 && w.endsWith('s') && has(w.slice(0, -1))));
   });
 }

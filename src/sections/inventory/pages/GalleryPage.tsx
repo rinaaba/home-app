@@ -17,7 +17,8 @@ export function GalleryPage() {
   const home = params.get('home') ?? '';
   const cat = params.get('cat') ?? '';
   const sub = params.get('sub') ?? '';
-  const [showFilters, setShowFilters] = useState(Boolean(cat || sub));
+  const owner = params.get('owner') ?? '';
+  const [showFilters, setShowFilters] = useState(Boolean(cat || sub || owner));
   const [ai, setAi] = useState<{ question: string; loading: boolean; result?: AiAnswer; error?: string } | null>(null);
   const aiCurrent = ai && ai.question === q.trim() ? ai : null; // an answer only counts for the question it was asked for
 
@@ -50,14 +51,16 @@ export function GalleryPage() {
   const cats = [...new Set(inHome.map((i) => i.category).filter(Boolean))].sort();
   const inCat = cat ? inHome.filter((i) => i.category === cat) : inHome;
   const subs = [...new Set(inCat.map((i) => i.subcategory).filter(Boolean))].sort();
-  const filtered = sub ? inCat.filter((i) => i.subcategory === sub) : inCat;
+  const inSub = sub ? inCat.filter((i) => i.subcategory === sub) : inCat;
+  const ownersHere = [...new Set(inHome.map((i) => i.owner).filter(Boolean))].sort();
+  const filtered = owner ? inSub.filter((i) => i.owner === owner) : inSub;
 
   // Search looks across all homes (including archived), ignoring the filters, so "where is…?" always works.
   const aiIds = aiCurrent?.result ? new Set(aiCurrent.result.itemIds) : null;
   const results = aiIds ? items.filter((i) => aiIds.has(i.id)) : q ? searchItems(items, q, homeName) : filtered;
   const sorted = [...results].sort((a, b) => (b.createdAt?.toMillis() ?? Date.now()) - (a.createdAt?.toMillis() ?? Date.now()));
 
-  const filterCount = [cat, sub].filter(Boolean).length;
+  const filterCount = [cat, sub, owner].filter(Boolean).length;
   const accent = homeStyle(homes.find((h) => h.id === home)).accent;
   const addLink = home ? `add?home=${home}` : 'add';
 
@@ -111,8 +114,12 @@ export function GalleryPage() {
             <option value="">All sub-categories</option>
             {subs.map((s) => <option key={s}>{s}</option>)}
           </select>
+          <select value={owner} onChange={(e) => setParam('owner', e.target.value)} aria-label="Owner" disabled={!ownersHere.length}>
+            <option value="">All owners</option>
+            {ownersHere.map((o) => <option key={o}>{o}</option>)}
+          </select>
           {filterCount > 0 && (
-            <button type="button" className="link-btn small" onClick={() => { const n = new URLSearchParams(params); ['cat', 'sub'].forEach((k) => n.delete(k)); setParams(n, { replace: true }); }}>
+            <button type="button" className="link-btn small" onClick={() => { const n = new URLSearchParams(params); ['cat', 'sub', 'owner'].forEach((k) => n.delete(k)); setParams(n, { replace: true }); }}>
               clear filters
             </button>
           )}
