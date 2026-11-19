@@ -7,6 +7,8 @@ import { ItemCard } from '../components/ItemCard';
 import { HomeSwitch } from '../components/HomeSwitch';
 import { homeStyle } from '../homeStyle';
 import { searchItems } from '../search';
+import { askInventory, type AiAnswer } from '../ai/ask';
+import { describeAiError } from '../../../core/ai/gemini';
 
 export function GalleryPage() {
   const { items, activeHomes, homes, loading, error, homeName } = useInventory();
@@ -16,6 +18,20 @@ export function GalleryPage() {
   const cat = params.get('cat') ?? '';
   const sub = params.get('sub') ?? '';
   const [showFilters, setShowFilters] = useState(Boolean(cat || sub));
+  const [ai, setAi] = useState<{ question: string; loading: boolean; result?: AiAnswer; error?: string } | null>(null);
+  const aiCurrent = ai && ai.question === q.trim() ? ai : null; // an answer only counts for the question it was asked for
+
+  const ask = async () => {
+    const question = q.trim();
+    if (!question) return;
+    setAi({ question, loading: true });
+    try {
+      const result = await askInventory(question, items, homeName, homes.map((h) => h.name));
+      setAi((a) => (a?.question === question ? { question, loading: false, result } : a));
+    } catch (e) {
+      setAi((a) => (a?.question === question ? { question, loading: false, error: describeAiError(e) } : a));
+    }
+  };
 
   const setParam = (key: string, value: string, reset: string[] = []) => {
     const next = new URLSearchParams(params);
@@ -37,7 +53,8 @@ export function GalleryPage() {
   const filtered = sub ? inCat.filter((i) => i.subcategory === sub) : inCat;
 
   // Search looks across all homes (including archived), ignoring the filters, so "where is…?" always works.
-  const results = q ? searchItems(items, q, homeName) : filtered;
+  const aiIds = aiCurrent?.result ? new Set(aiCurrent.result.itemIds) : null;
+  const results = aiIds ? items.filter((i) => aiIds.has(i.id)) : q ? searchItems(items, q, homeName) : filtered;
   const sorted = [...results].sort((a, b) => (b.createdAt?.toMillis() ?? Date.now()) - (a.createdAt?.toMillis() ?? Date.now()));
 
   const filterCount = [cat, sub].filter(Boolean).length;
@@ -52,22 +69,37 @@ export function GalleryPage() {
         </div>
       )}
 
-      <div className="toolbar">
+      <form className="toolbar" onSubmit={(e) => { e.preventDefault(); if (q.trim().split(/\s+/).length > 2) void ask(); }}>
         <input
           className="search"
           type="search"
           value={q}
           onChange={(e) => setParam('q', e.target.value)}
-          placeholder="Search, e.g. t-shirt"
+          placeholder="Search or ask, e.g. t-shirt"
           aria-label="Search"
+          enterKeyHint="search"
         />
+        {q && (
+          <button type="button" className="btn primary ask-btn" onClick={() => void ask()} disabled={aiCurrent?.loading}>
+            <Icons.sparkle /> Ask AI
+          </button>
+        )}
         {!q && (
           <button type="button" className={`square-btn ${showFilters || filterCount ? 'on' : ''}`} onClick={() => setShowFilters((s) => !s)} aria-label="Filters">
             <Icons.filter />
             {filterCount > 0 && <span className="dot-count">{filterCount}</span>}
           </button>
         )}
-      </div>
+      </form>
+
+      {aiCurrent && (
+        <div className={`ai-answer ${aiCurrent.error ? 'is-error' : ''}`} role="status">
+          <span className="ai-icon"><Icons.sparkle /></span>
+          <div>
+            {aiCurrent.loading ? 'Thinking…' : aiCurrent.error ? `Couldn’t answer: ${aiCurrent.error}` : aiCurrent.result?.answer}
+          </div>
+        </div>
+      )}
 
       {!q && showFilters && (
         <div className="selects">
@@ -102,7 +134,7 @@ export function GalleryPage() {
           <div className="count-row">
             <p className="count">
               {sorted.length} {sorted.length === 1 ? 'item' : 'items'}
-              {q ? ` matching “${q}”` : home ? ` in ${homeName(home)}` : ''}
+              {aiIds ? ' found by AI' : q ? ` matching “${q}”` : home ? ` in ${homeName(home)}` : ''}
             </p>
             <Link to="/settings" className="link-btn small">homes and people</Link>
           </div>
@@ -118,7 +150,7 @@ export function GalleryPage() {
             ))}
           </div>
           {sorted.length === 0 && (
-            <p className="empty">{q ? `Nothing matches “${q}”.` : items.length === 0 ? 'No items yet. Add your first one.' : 'No items match these filters.'}</p>
+            <p className="empty">{aiIds ? 'No matching items.' : q ? `No exact matches for “${q}”. Try Ask AI.` : items.length === 0 ? 'No items yet. Add your first one.' : 'No items match these filters.'}</p>
           )}
         </>
       )}

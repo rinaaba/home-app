@@ -9,7 +9,7 @@ A family home app. Version 1 has one section: **Inventory** — what we own, and
 - Sign in with Google. Each family has its own private space (homes, people, items); members invite each other in Settings
 - People on the app's access list can invite friends, who get their own separate space
 - Gallery of items, filter by home, category, sub-category
-- Search across all homes ("where is the blender?")
+- Search across all homes, or ask the AI in plain words ("how many shirts do I have in Deal?")
 - Quick add: take a photo → AI guesses name, category, sub-category, color and notes → you confirm
 - AI turns the photo into one small, simple picture; the photo itself is never kept
 - Pictures are optional (switch it off for socks): items without one show a color tile

@@ -185,6 +185,12 @@ code { font-family: var(--mono); background: var(--card); padding: 1px 6px; bord
 .add-card:hover { border-color: var(--accent-border); color: var(--accent); }
 .add-card.wide { width: 100%; min-height: 72px; flex-direction: row; margin: 10px 0; }
 
+/* Ask AI */
+.ask-btn { flex-shrink: 0; padding: 0 14px; }
+.ai-answer { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; margin-bottom: 12px; border-radius: var(--radius); background: var(--accent-soft); border: 1px solid var(--accent-border); font-size: 1.05rem; }
+.ai-answer.is-error { background: var(--danger-soft); border-color: var(--danger-border); color: var(--danger); font-size: 0.95rem; }
+.ai-icon { color: var(--accent); flex-shrink: 0; margin-top: 2px; }
+
 /* Add */
 .pick { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
 .pick .btn.huge:not(.primary) { background: var(--card); }
