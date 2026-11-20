@@ -172,21 +172,21 @@ code { font-family: var(--mono); background: var(--card); padding: 1px 6px; bord
 .selects select { min-height: 40px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--input); color: var(--text); font: inherit; font-size: 0.95rem; padding: 0 10px; flex: 1 1 140px; max-width: 240px; }
 .count { font-size: 0.82rem; margin: 0; }
 .count-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 4px 0 10px; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-@media (min-width: 900px) { .grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; } }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+@media (min-width: 900px) { .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; } }
 .item-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; text-decoration: none; color: inherit; display: flex; flex-direction: column; }
-.item-img-wrap { position: relative; aspect-ratio: 1; background: var(--img-bg); margin: 6px 6px 0; border-radius: var(--radius-sm); overflow: hidden; }
+.item-img-wrap { position: relative; aspect-ratio: 1; background: var(--img-bg); margin: 4px 4px 0; border-radius: 8px; overflow: hidden; }
 .item-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .item-img.tile, .item-img.placeholder { display: grid; place-items: center; aspect-ratio: 1; background: var(--accent-soft); }
-.tile-icon { font-size: 2.6rem; filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.25)); }
-.badge { position: absolute; left: 6px; bottom: 6px; font: 0.72rem var(--mono); background: rgb(0 0 0 / 0.6); color: #fff; padding: 2px 8px; border-radius: 999px; }
-.item-card-body { padding: 10px 12px 12px; }
-.item-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.item-place { font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.tile-icon { font-size: 1.9rem; filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.25)); }
+.badge { position: absolute; left: 4px; bottom: 4px; font: 0.62rem var(--mono); background: rgb(0 0 0 / 0.6); color: #fff; padding: 2px 8px; border-radius: 999px; }
+.item-card-body { padding: 6px 8px 8px; }
+.item-name { font-weight: 600; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-place { font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 .add-card {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-  min-height: 140px; border: 1.5px dashed var(--border); border-radius: var(--radius); background: none;
-  color: var(--muted); text-decoration: none; font: inherit; font-size: 1.05rem; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  min-height: 100px; border: 1.5px dashed var(--border); border-radius: var(--radius); background: none;
+  color: var(--muted); text-decoration: none; font: inherit; font-size: 0.9rem; cursor: pointer;
 }
 .add-card:hover { border-color: var(--accent-border); color: var(--accent); }
 .add-card.wide { width: 100%; min-height: 72px; flex-direction: row; margin: 10px 0; }
