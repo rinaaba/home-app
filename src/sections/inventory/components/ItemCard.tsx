@@ -18,7 +18,8 @@ export function ItemCard({ item, place }: { item: Item; place: string }) {
       </div>
       <div className="item-card-body">
         <div className="item-name">{item.name || (item.aiStatus === 'pending' ? 'New item' : 'Untitled')}</div>
-        <div className="item-place">{[item.color, place].filter(Boolean).join(' · ')}</div>
+        {/* The home shows as the picture's tint, so the second line is what it is and whose. */}
+        <div className="item-place">{[item.subcategory || item.category, item.owner].filter(Boolean).join(' · ') || place}</div>
       </div>
     </Link>
   );
