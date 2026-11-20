@@ -20,3 +20,20 @@ export function keepAppUpdated() {
 declare const __BUILD_TIME__: string;
 /** When this version of the app was built, e.g. "20 Nov, 14:05". */
 export const buildLabel = new Date(__BUILD_TIME__).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+/**
+ * Check right now for a newer version. Resolves 'latest' if there's none; otherwise the app
+ * reloads into the new version by itself (the promise then never resolves).
+ */
+export async function checkForUpdate(): Promise<'latest' | 'offline'> {
+  if (!navigator.onLine) return 'offline';
+  const reg = await navigator.serviceWorker?.getRegistration();
+  if (!reg) { location.reload(); return new Promise(() => undefined); }
+  await reg.update();
+  const incoming = reg.installing ?? reg.waiting;
+  if (!incoming) return 'latest';
+  // A new version is downloading: reload once it takes over.
+  navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true });
+  setTimeout(() => location.reload(), 15_000); // just in case
+  return new Promise(() => undefined);
+}

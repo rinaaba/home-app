@@ -7,7 +7,7 @@ import { Icons } from '../core/ui/icons';
 import { getDailyLimit, subscribeTodayUsage } from '../core/ai/quota';
 import { useToast } from '../core/ui/toast';
 import { sections } from './sections';
-import { buildLabel } from '../core/updates';
+import { buildLabel, checkForUpdate } from '../core/updates';
 
 const APP_URL = `${location.origin}${location.pathname}`;
 
@@ -171,6 +171,23 @@ function InviteFriend() {
   );
 }
 
+function VersionLine() {
+  const [state, setState] = useState<'idle' | 'checking' | 'latest' | 'offline'>('idle');
+  const check = async () => {
+    setState('checking');
+    setState(await checkForUpdate());
+  };
+  return (
+    <p className="meta center">
+      version {buildLabel} ·{' '}
+      {state === 'checking' ? 'checking…'
+        : state === 'latest' ? 'you have the latest version'
+        : state === 'offline' ? 'no internet connection'
+        : <button type="button" className="link-btn small" onClick={() => void check()}>check for updates</button>}
+    </p>
+  );
+}
+
 export function SettingsPage() {
   return (
     <div className="page narrow settings-page">
@@ -185,7 +202,7 @@ export function SettingsPage() {
       <p className="meta center app-link">
         <Icons.house /> Share the app: {APP_URL}
       </p>
-      <p className="meta center">version {buildLabel}</p>
+      <VersionLine />
     </div>
   );
 }
