@@ -1,40 +1,47 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Spinner } from '../../../core/ui/Spinner';
-import { useInventory } from '../InventoryContext';
-import { isStuck, retryItemPicture } from '../ai/picture';
-import { ItemImage } from '../components/ItemImage';
-import { deleteItem, moveItem, removeItemImage, replaceItemImage } from '../data/items';
+import { useToast } from '../../../core/ui/toast';
 import { resizeImage } from '../../../core/images/resize';
 import { cropToItem } from '../../../core/images/crop';
-import { useToast } from '../../../core/ui/toast';
-import { aiPictures } from '../../../core/firebase/config';
-import { HomeIcon, homeStyle } from '../homeStyle';
+import { useInventory } from '../InventoryContext';
+import { retryAutofill } from '../ai/autofill';
+import { ItemImage } from '../components/ItemImage';
+import { ItemForm } from '../components/ItemForm';
+import { deleteItem, removeItemImage, replaceItemImage, updateItem } from '../data/items';
 import { galleryLink } from '../galleryMemory';
+import { homeStyle } from '../homeStyle';
+import type { Item, ItemDetails } from '../types';
 
-export function ItemPage() {
-  const { id } = useParams();
-  const { items, homes, activeHomes, loading, homeName } = useInventory();
+const detailsOf = (item: Item): ItemDetails => ({
+  name: item.name, homeId: item.homeId, category: item.category, subcategory: item.subcategory,
+  color: item.color, colorHex: item.colorHex, owner: item.owner, notes: item.notes,
+});
+
+/** Tapping an item opens this page: its picture and all its details, ready to change. */
+function ItemEditor({ item }: { item: Item }) {
+  const { homes, homeName } = useInventory();
   const navigate = useNavigate();
-  const [working, setWorking] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [details, setDetails] = useState<ItemDetails>(() => detailsOf(item));
+  const [dirty, setDirty] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [working, setWorking] = useState(false);
 
-  if (loading) return <Spinner label="Loading" />;
-  const item = items.find((i) => i.id === id);
-  if (!item) return <div className="page narrow"><p>This item doesn’t exist anymore.</p><Link to={galleryLink()}>Back to inventory</Link></div>;
+  // While the AI is still filling in (or someone else edits), show the newest details, unless you've started typing.
+  useEffect(() => { if (!dirty) setDetails(detailsOf(item)); }, [item, dirty]);
 
-  const pending = (item.imageStatus === 'pending' && !isStuck(item)) || working;
-  const canRetry = aiPictures && item.imageKind === 'photo' && !pending;
-
-  const retry = async () => {
-    setWorking(true);
+  const save = async () => {
+    setBusy(true);
     try {
-      await retryItemPicture(item);
+      const homeChanged = details.homeId !== item.homeId;
+      await updateItem(item.id, { ...details, name: details.name.trim(), color: details.color.trim(), notes: details.notes.trim() });
+      toast(homeChanged ? `Saved and moved to ${homeName(details.homeId)}` : 'Saved');
+      navigate(galleryLink());
     } catch (e) {
-      alert(`Couldn’t make a picture: ${(e as Error).message}`);
-    } finally {
-      setWorking(false);
+      alert(`Couldn’t save: ${(e as Error).message}`);
+      setBusy(false);
     }
   };
 
@@ -43,8 +50,7 @@ export function ItemPage() {
     if (!file) return;
     setWorking(true);
     try {
-      const picture = await cropToItem(await resizeImage(file, 1024), undefined);
-      await replaceItemImage(item, picture);
+      await replaceItemImage(item, await cropToItem(await resizeImage(file, 1024), undefined));
       toast('Picture saved');
     } catch (e) {
       alert(`Couldn’t use that picture: ${(e as Error).message}`);
@@ -58,23 +64,15 @@ export function ItemPage() {
   };
 
   const remove = async () => {
-    if (!confirm(`Delete “${item.name}”? This can’t be undone.`)) return;
+    if (!confirm(`Delete “${item.name || 'this item'}”? This can’t be undone.`)) return;
     await deleteItem(item);
+    toast('Deleted');
     navigate(galleryLink());
   };
 
-  const rows: [string, string][] = [
-    ['Home', homeName(item.homeId)],
-    ['Category', item.category],
-    ['Sub-category', item.subcategory],
-    ['Color', item.color],
-    ['Owner', item.owner],
-    ['Notes', item.notes],
-    ['Added by', item.createdBy],
-  ];
-
+  const accent = homeStyle(homes.find((h) => h.id === details.homeId)).accent;
   return (
-    <div className={`page item-page accent-${homeStyle(homes.find((h) => h.id === item.homeId)).accent}`}>
+    <div className={`page item-page accent-${accent}`}>
       <div className="page-head">
         <Link to={galleryLink()} className="btn link">← Back</Link>
       </div>
@@ -83,62 +81,46 @@ export function ItemPage() {
         <div className="item-photo">
           <ItemImage item={item} />
           <div className="photo-actions">
-            {pending && <span className="muted">Making a picture…</span>}
-            {aiPictures && !pending && item.imageStatus === 'failed' && item.imageError && (
-              <span className="muted">The AI picture didn’t work: {item.imageError}</span>
-            )}
-            {canRetry && <button type="button" className="btn small" onClick={retry}>Try AI picture again</button>}
-            {!pending && (
+            {working && <span className="muted">Saving the picture…</span>}
+            {!working && (
               <button type="button" className="btn small" onClick={() => fileRef.current?.click()}>
                 {item.image ? 'Replace picture' : 'Add picture'}
               </button>
             )}
-            {item.image && !pending && <button type="button" className="btn small" onClick={removePicture}>Remove picture</button>}
+            {item.image && !working && <button type="button" className="btn small" onClick={removePicture}>Remove picture</button>}
             <input ref={fileRef} type="file" accept="image/*,.heic,.heif" hidden onChange={(e) => { void replacePicture(e.target.files?.[0]); e.target.value = ''; }} />
           </div>
+          <p className="meta">Added by {item.createdBy || 'someone'}</p>
         </div>
 
         <div className="item-info">
-          <div className="eyebrow">
-            <HomeIcon home={homes.find((h) => h.id === item.homeId)} />
-            {homeName(item.homeId)}
-          </div>
-          <h1>{item.name || (item.aiStatus === 'pending' ? 'New item' : 'Untitled')}</h1>
           {item.aiStatus === 'pending' && <p className="note">The AI is filling in the details. They’ll appear here by themselves.</p>}
           {item.aiStatus === 'failed' && (
-            <p className="note">Couldn’t fill in the details automatically{item.aiError ? ` (${item.aiError})` : ''}. Tap Edit to add them.</p>
+            <div className="note">
+              Couldn’t fill in the details automatically{item.aiError ? ` (${item.aiError})` : ''}.
+              {item.aiRetryAt > Date.now() ? ' It will try again by itself in a few minutes. ' : ' '}
+              <button type="button" className="link-btn" onClick={() => void retryAutofill(item.id, true)}>try again now</button>
+            </div>
           )}
-          <dl>
-            {rows.filter(([, v]) => v).map(([k, v]) => (
-              <div key={k} className="dl-row">
-                <dt>{k}</dt>
-                <dd>
-                  {k === 'Color' && item.colorHex && <span className="swatch" style={{ background: item.colorHex }} />}
-                  {v}
-                </dd>
-              </div>
-            ))}
-          </dl>
-          <div className="actions">
-            <select
-              className="btn primary big move-select"
-              value=""
-              aria-label="Move to another home"
-              onChange={(e) => {
-                const to = e.target.value;
-                if (!to) return;
-                void moveItem(item.id, to).then(() => toast(`Moved to ${homeName(to)}`)).catch((err) => alert(`Couldn’t move: ${err.message}`));
-              }}
-            >
-              <option value="">Move to…</option>
-              {activeHomes.filter((h) => h.id !== item.homeId).map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
-            </select>
-            <Link className="btn big" to="edit">Edit</Link>
-            <button type="button" className="btn danger" onClick={remove}>Delete</button>
-          </div>
+          <ItemForm
+            value={details}
+            onChange={(v) => { setDetails(v); setDirty(true); }}
+            onSubmit={() => void save()}
+            submitLabel="Save"
+            busy={busy}
+          />
+          <button type="button" className="btn danger delete-item" onClick={() => void remove()}>Delete item</button>
         </div>
       </div>
-
     </div>
   );
+}
+
+export function ItemPage() {
+  const { id } = useParams();
+  const { items, loading } = useInventory();
+  if (loading) return <Spinner label="Loading" />;
+  const item = items.find((i) => i.id === id);
+  if (!item) return <div className="page narrow"><p>This item doesn’t exist anymore.</p><Link to={galleryLink()}>Back to inventory</Link></div>;
+  return <ItemEditor key={item.id} item={item} />;
 }

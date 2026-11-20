@@ -301,6 +301,16 @@ dd { margin: 0; white-space: pre-wrap; }
   background-position: calc(100% - 22px) 52%, calc(100% - 16px) 52%; background-size: 6px 6px; background-repeat: no-repeat; }
 .btn.move-select option { color: var(--text); background: var(--surface); }
 
+.delete-item { margin-top: 16px; width: 100%; }
+/* Item page: a compact picture beside its buttons on phones, so the details are right there. */
+@media (max-width: 799px) {
+  .item-photo { display: grid; grid-template-columns: 130px 1fr; gap: 6px 14px; align-items: start; }
+  .item-photo > .item-img, .item-photo > .item-img.tile { grid-row: span 2; }
+  .item-photo .photo-actions { margin-top: 0; flex-direction: column; align-items: flex-start; }
+  .item-photo .tile-icon { font-size: 2.6rem; }
+}
+.item-photo .meta { margin-top: 8px; }
+
 /* Homes */
 .card-list { list-style: none; padding: 0; margin: 0 0 4px; display: flex; flex-direction: column; gap: 10px; }
 .home-card { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }

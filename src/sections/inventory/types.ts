@@ -45,6 +45,9 @@ export interface Item {
   /** The AI filling in the details after a quick add: pending → done, or failed. */
   aiStatus: 'pending' | 'done' | 'failed';
   aiError: string;
+  /** How many times filling in has failed, and when to try again (ms since 1970; 0 = don't). */
+  aiAttempts: number;
+  aiRetryAt: number;
   createdAt: Timestamp | null;
   updatedAt: Timestamp | null;
   createdBy: string;

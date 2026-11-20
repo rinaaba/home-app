@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { subscribeHomes } from './data/homes';
 import { subscribeItems } from './data/items';
 import { subscribePeople } from './data/people';
-import { enqueueAutofill } from './ai/autofill';
+import { enqueueAutofill, retryAutofill } from './ai/autofill';
 import { setCustomCategories } from './ai/classify';
 import { useAuth } from '../../core/auth/AuthProvider';
 import type { Home, Item } from './types';
@@ -44,9 +44,15 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (items) setCustomCategories(items); }, [items]);
 
   // Items you quick-added whose details aren't filled in yet (e.g. the app was closed): continue now.
+  // Items where filling in failed: try again when their retry time has come (checked every minute).
+  const [tick, setTick] = useState(0);
+  useEffect(() => { const t = setInterval(() => setTick((n) => n + 1), 60_000); return () => clearInterval(t); }, []);
   useEffect(() => {
-    items?.filter((it) => it.aiStatus === 'pending' && it.createdBy === me).forEach((it) => enqueueAutofill(it.id));
-  }, [items, me]);
+    const mine = items?.filter((it) => it.createdBy === me) ?? [];
+    mine.filter((it) => it.aiStatus === 'pending').forEach((it) => enqueueAutofill(it.id));
+    // (Up to 3 automatic retries; items that failed before retries existed get one too.)
+    mine.filter((it) => it.aiStatus === 'failed' && it.aiAttempts <= 3 && it.aiRetryAt <= Date.now()).forEach((it) => void retryAutofill(it.id));
+  }, [items, me, tick]);
 
   const value = useMemo<InventoryValue>(() => {
     const h = homes ?? [];

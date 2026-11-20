@@ -14,6 +14,17 @@ const photos = new Map<string, Blob>(); // the full photos taken in this session
 const queued = new Set<string>();
 let chain: Promise<void> = Promise.resolve();
 const listeners = new Set<() => void>();
+const RETRY_MINUTES = [2, 10, 60];
+
+/** Try filling in an item again (automatically after a failure, or when you tap "Try again"). */
+export async function retryAutofill(itemId: string, fromScratch = false) {
+  if (queued.has(itemId) || retrying.has(itemId)) return;
+  retrying.add(itemId);
+  await updateItem(itemId, { aiStatus: 'pending', aiError: '', ...(fromScratch ? { aiAttempts: 0, aiRetryAt: 0 } : {}) });
+  retrying.delete(itemId);
+  enqueueAutofill(itemId);
+}
+const retrying = new Set<string>();
 
 const held = new Set<string>();
 
@@ -46,7 +57,7 @@ async function fill(id: string) {
     if (!item || item.aiStatus !== 'pending') return;
     const photo = photos.get(id) ?? (item.image ? await loadImageBlob(item.image).catch(() => null) : null);
     if (!photo) {
-      await updateItem(id, { aiStatus: 'failed', aiError: 'No picture to look at.' });
+      await updateItem(id, { aiStatus: 'failed', aiError: 'No picture to look at.', aiAttempts: 99, aiRetryAt: 0 });
       return;
     }
 
@@ -68,9 +79,19 @@ async function fill(id: string) {
         notes: pick(now.notes, g.notes),
         aiStatus: 'done',
         aiError: '',
+        aiAttempts: 0,
+        aiRetryAt: 0,
       });
     } catch (e) {
-      await updateItem(id, { aiStatus: 'failed', aiError: describeAiError(e) }).catch(() => undefined);
+      // Try again later by itself: after 2 minutes, then 10 minutes, then an hour.
+      const attempts = item.aiAttempts + 1;
+      const wait = RETRY_MINUTES[attempts - 1];
+      await updateItem(id, {
+        aiStatus: 'failed',
+        aiError: describeAiError(e),
+        aiAttempts: attempts,
+        aiRetryAt: wait ? Date.now() + wait * 60_000 : 0,
+      }).catch(() => undefined);
     }
 
     // Better picture: the cut-out, or else a crop around the item. Not if someone already chose a picture.

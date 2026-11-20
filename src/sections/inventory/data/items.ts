@@ -27,6 +27,8 @@ function fromDoc(id: string, d: DocumentData): Item {
     imageError: d.imageError ?? '',
     aiStatus: d.aiStatus ?? 'done',
     aiError: d.aiError ?? '',
+    aiAttempts: d.aiAttempts ?? 0,
+    aiRetryAt: d.aiRetryAt ?? 0,
     createdAt: d.createdAt ?? null,
     updatedAt: d.updatedAt ?? null,
     createdBy: d.createdBy ?? '',
@@ -99,7 +101,7 @@ export async function createQuickItem(id: string, homeId: string, owner: string,
   await setDoc(doc(itemsCol(), id), {
     name: '', homeId, owner, category: '', subcategory: '', color: '', colorHex: '', notes: '',
     image, imageKind: image ? 'photo' : null, imageStatus: image ? 'ready' : 'none', imageRequestedAt: null, imageError: '',
-    aiStatus: 'pending', aiError: '',
+    aiStatus: 'pending', aiError: '', aiAttempts: 0, aiRetryAt: 0,
     createdBy, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
   });
 }
