@@ -3,8 +3,11 @@ import { createRoot } from 'react-dom/client';
 import './styles/global.css';
 import './core/ui/theme'; // set light/dark before anything renders
 import { keepAppUpdated } from './core/updates';
+import { fixOldLinks } from './app/oldLinks';
 
 keepAppUpdated();
+
+fixOldLinks();
 import { isConfigured } from './core/firebase/config';
 
 const root = createRoot(document.getElementById('root')!);

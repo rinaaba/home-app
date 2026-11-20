@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Spinner } from '../../../core/ui/Spinner';
+import { CropDialog } from '../../../core/ui/CropDialog';
 import { useToast } from '../../../core/ui/toast';
 import { resizeImage } from '../../../core/images/resize';
 import { cropToItem } from '../../../core/images/crop';
@@ -28,6 +29,7 @@ function ItemEditor({ item }: { item: Item }) {
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
   const [working, setWorking] = useState(false);
+  const [cropping, setCropping] = useState(false);
 
   // While the AI is still filling in (or someone else edits), show the newest details, unless you've started typing.
   useEffect(() => { if (!dirty) setDetails(detailsOf(item)); }, [item, dirty]);
@@ -87,10 +89,25 @@ function ItemEditor({ item }: { item: Item }) {
                 {item.image ? 'Replace picture' : 'Add picture'}
               </button>
             )}
+            {item.image && !working && <button type="button" className="btn small" onClick={() => setCropping(true)}>Crop picture</button>}
             {item.image && !working && <button type="button" className="btn small" onClick={removePicture}>Remove picture</button>}
             <input ref={fileRef} type="file" accept="image/*,.heic,.heif" hidden onChange={(e) => { void replacePicture(e.target.files?.[0]); e.target.value = ''; }} />
           </div>
           <p className="meta">Added by {item.createdBy || 'someone'}</p>
+          {cropping && item.image && (
+            <CropDialog
+              src={item.image.url}
+              onClose={() => setCropping(false)}
+              onDone={(blob) => {
+                setCropping(false);
+                setWorking(true);
+                replaceItemImage(item, blob)
+                  .then(() => toast('Picture cropped'))
+                  .catch((e) => alert(`Couldn’t save the crop: ${e.message}`))
+                  .finally(() => setWorking(false));
+              }}
+            />
+          )}
         </div>
 
         <div className="item-info">

@@ -13,4 +13,4 @@ export const galleryMemory = {
 };
 
 /** The gallery address with the filters/search you had. */
-export const galleryLink = () => (galleryMemory.search ? `/inventory?${galleryMemory.search}` : '/inventory');
+export const galleryLink = () => (galleryMemory.search ? `/homes-inventory?${galleryMemory.search}` : '/homes-inventory');

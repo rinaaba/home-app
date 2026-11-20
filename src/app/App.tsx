@@ -1,4 +1,7 @@
-import { HashRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
+
+// The app lives at /home-app/ on GitHub Pages; pages are /home-app/homes-inventory, /home-app/settings, …
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
 import { AuthProvider, useAuth } from '../core/auth/AuthProvider';
 import { Spinner } from '../core/ui/Spinner';
 import { Shell } from './Shell';
@@ -48,9 +51,9 @@ function Gate() {
 
   return (
     <FamilyProvider>
-      <HashRouter>
+      <BrowserRouter basename={basename}>
         <Shell />
-      </HashRouter>
+      </BrowserRouter>
     </FamilyProvider>
   );
 }

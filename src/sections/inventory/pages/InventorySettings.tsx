@@ -6,6 +6,7 @@ import { savePeople } from '../data/people';
 import { ACCENTS, HomeStylePicker, homeStyle } from '../homeStyle';
 import type { Home } from '../types';
 import { DeleteHomeDialog } from '../components/DeleteHomeDialog';
+import { isCutoutOn, setCutoutOn } from '../ai/autofill';
 
 function HomeRow({ home, count, onUp, onDown }: { home: Home; count: number; onUp?: () => void; onDown?: () => void }) {
   const style = homeStyle(home);
@@ -99,6 +100,23 @@ function People() {
   );
 }
 
+/** Background removal runs on each device; it turns itself off if it ever made the app close. */
+function CutoutSetting() {
+  const [on, setOn] = useState(isCutoutOn);
+  return (
+    <>
+      <h2>Pictures</h2>
+      <label className="switch-row">
+        <input type="checkbox" checked={on} onChange={(e) => { setCutoutOn(e.target.checked); setOn(e.target.checked); }} />
+        <span>
+          Remove backgrounds on this device
+          <small className="muted">Makes clean product pictures. If it ever made the app close, it turns itself off; turn it on here to try again.</small>
+        </span>
+      </label>
+    </>
+  );
+}
+
 /** Inventory's part of the Settings page: homes and people. */
 export function InventorySettings() {
   const { homes, items } = useInventory();
@@ -161,6 +179,7 @@ export function InventorySettings() {
       )}
 
       <People />
+      <CutoutSetting />
 
       {archived.length > 0 && (
         <>

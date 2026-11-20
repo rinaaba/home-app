@@ -29,6 +29,8 @@ jobs:
           REPO="${{ github.event.repository.name }}"
           if [[ "$REPO" == *.github.io ]]; then export BASE_PATH="/"; else export BASE_PATH="/$REPO/"; fi
           npm run build
+          # Let addresses like /home-app/homes-inventory open the app too.
+          cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

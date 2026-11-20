@@ -3,6 +3,8 @@
 A family home app. Version 1 has one section: **Inventory** — what we own, and in which home
 (Tel Aviv, Evia, Deal). Built to grow: lists, tasks, a calendar and more can be added as new sections.
 
+Addresses: the start menu is at `/home-app/`, the inventory at `/home-app/homes-inventory`, settings at `/home-app/settings`.
+
 👉 **First time? Follow [docs/SETUP.md](docs/SETUP.md).** Ideas for later: [docs/BACKLOG.md](docs/BACKLOG.md).
 
 ## What it does
@@ -62,7 +64,7 @@ docs/SETUP.md                    step-by-step setup
 
 ## Adding a section later
 1. Create `src/sections/<name>/index.tsx` that exports an `AppSection` (id, title, icon, path, Component).
-2. Add it to `src/app/sections.ts`. Navigation appears automatically once there are two or more sections.
+2. Add it to `src/app/sections.ts`. It gets a button on the start menu, and its pages live at `/home-app/<path>`. (Apps that live elsewhere for now go in `otherApps` there.)
 3. Keep its data inside the family with `fcol('lists')` / `fdoc(...)` from `src/core/family/scope.ts`. The security rules already cover them.
 4. Optional: give it a `Settings` component; it appears on the Settings page.
 

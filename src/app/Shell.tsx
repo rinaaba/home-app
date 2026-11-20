@@ -1,4 +1,5 @@
-import { Link, Navigate, NavLink, Route, Routes } from 'react-router-dom';
+import { Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
+import { HomeMenu } from './HomeMenu';
 import { SettingsPage } from './SettingsPage';
 import { useAuth } from '../core/auth/AuthProvider';
 import { Icons } from '../core/ui/icons';
@@ -10,13 +11,16 @@ export function Shell() {
   const { firstName, user, signOut } = useAuth();
   const { theme, toggle } = useTheme();
   const showNav = sections.length > 1;
+  const { pathname } = useLocation();
+  const currentSection = sections.find((s) => pathname === `/${s.path}` || pathname.startsWith(`/${s.path}/`));
 
   return (
     <ToastProvider>
     <div className={`shell ${showNav ? 'has-nav' : ''}`}>
       <header className="topbar">
         <div>
-          <div className="brand">Home</div>
+          {/* "Home" takes you to the start of the part you're in (e.g. the gallery). */}
+          <Link to={currentSection ? `/${currentSection.path}` : '/'} className="brand">Home</Link>
           <div className="signed-in">
             signed in as {firstName || user?.email} · <button type="button" className="link-btn" onClick={signOut}>sign out</button>
           </div>
@@ -25,6 +29,7 @@ export function Shell() {
           <button type="button" className="square-btn" onClick={toggle} aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}>
             {theme === 'dark' ? <Icons.sun /> : <Icons.moon />}
           </button>
+          <Link to="/" className="square-btn" aria-label="Menu"><Icons.all /></Link>
           <Link to="/settings" className="square-btn" aria-label="Settings"><Icons.gear /></Link>
         </div>
       </header>
@@ -46,7 +51,8 @@ export function Shell() {
             <Route key={s.id} path={`/${s.path}/*`} element={<s.Component />} />
           ))}
           <Route path="/settings" element={<SettingsPage />} />
-          <Route path="*" element={<Navigate to={`/${sections[0].path}`} replace />} />
+          <Route path="/" element={<HomeMenu />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
     </div>

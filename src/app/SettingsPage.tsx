@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../core/auth/AuthProvider';
 import { addMember, inviteFriend, isOnAccessList, removeMember, renameFamily } from '../core/family/families';
 import { useFamilies, useFamily } from '../core/family/FamilyProvider';
@@ -9,7 +9,7 @@ import { useToast } from '../core/ui/toast';
 import { sections } from './sections';
 import { buildLabel, checkForUpdate } from '../core/updates';
 
-const APP_URL = `${location.origin}${location.pathname}`;
+const APP_URL = `${location.origin}${import.meta.env.BASE_URL}`;
 
 function FamilySettings() {
   const family = useFamily();
@@ -189,10 +189,11 @@ function VersionLine() {
 }
 
 export function SettingsPage() {
+  const navigate = useNavigate();
   return (
     <div className="page narrow settings-page">
       <div className="page-head">
-        <Link to="/" className="link-btn">← Back</Link>
+        <button type="button" className="link-btn" onClick={() => (history.length > 1 ? navigate(-1) : navigate('/'))}>← Back</button>
       </div>
       <h1>Settings</h1>
       <FamilySettings />

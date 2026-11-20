@@ -24,7 +24,7 @@ export const inventorySection: AppSection = {
   id: 'inventory',
   title: 'Inventory',
   icon: '📦',
-  path: 'inventory',
+  path: 'homes-inventory',
   Component: InventoryRoutes,
   Settings: () => (
     <InventoryProvider>
