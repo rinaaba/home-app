@@ -7,6 +7,7 @@ import { ItemCard } from '../components/ItemCard';
 import { HomeSwitch } from '../components/HomeSwitch';
 import { homeStyle } from '../homeStyle';
 import { searchItems } from '../search';
+import { autofillPending, onAutofillChange } from '../ai/autofill';
 import { askInventory } from '../ai/ask';
 import { galleryMemory, type AiState } from '../galleryMemory';
 import { describeAiError } from '../../../core/ai/gemini';
@@ -60,6 +61,12 @@ export function GalleryPage() {
       requestAnimationFrame(() => window.scrollTo({ top: galleryMemory.scroll }));
     }
   }, [loading, restored, params]);
+
+  // How many quick-added items the AI is still filling in (shown as a small progress line).
+  const [filling, setFilling] = useState(autofillPending());
+  useEffect(() => onAutofillChange(() => setFilling(autofillPending())), []);
+  const pendingItems = items.filter((i) => i.aiStatus === 'pending').length;
+  const fillingCount = Math.max(filling, pendingItems);
 
   const archivedIds = useMemo(() => new Set(homes.filter((h) => h.archived).map((h) => h.id)), [homes]);
 
@@ -147,6 +154,11 @@ export function GalleryPage() {
       )}
 
       {error && <div className="error">Something went wrong: {error}</div>}
+      {fillingCount > 0 && (
+        <div className="filling-line" role="status">
+          <span className="spinner small" /> The AI is filling in {fillingCount} {fillingCount === 1 ? 'item' : 'items'}… you can keep using the app.
+        </div>
+      )}
 
       {loading ? (
         <Spinner label="Loading items" />

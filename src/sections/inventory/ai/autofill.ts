@@ -26,6 +26,7 @@ export function enqueueAutofill(itemId: string, photo?: Blob) {
   if (photo) { photos.set(itemId, photo); held.delete(itemId); }
   if (held.has(itemId) || queued.has(itemId)) return;
   queued.add(itemId);
+  listeners.forEach((l) => l());
   chain = chain.then(() => fill(itemId)).catch(() => undefined);
 }
 

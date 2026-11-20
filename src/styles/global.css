@@ -191,6 +191,10 @@ code { font-family: var(--mono); background: var(--card); padding: 1px 6px; bord
 .add-card:hover { border-color: var(--accent-border); color: var(--accent); }
 .add-card.wide { width: 100%; min-height: 72px; flex-direction: row; margin: 10px 0; }
 
+/* Progress line while the AI fills in quick-added items */
+.filling-line { display: flex; align-items: center; gap: 10px; padding: 10px 14px; margin-bottom: 12px; border-radius: var(--radius-sm); background: var(--accent-soft); border: 1px solid var(--accent-border); font: 0.85rem var(--mono); color: var(--accent); }
+.spinner.small { width: 14px; height: 14px; border-width: 2px; flex-shrink: 0; }
+
 /* Ask AI */
 .ask-btn { flex-shrink: 0; padding: 0 14px; }
 .ai-answer { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; margin-bottom: 12px; border-radius: var(--radius); background: var(--accent-soft); border: 1px solid var(--accent-border); font-size: 1.05rem; }
