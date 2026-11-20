@@ -348,3 +348,6 @@ dd { margin: 0; white-space: pre-wrap; }
 .shutter:disabled { opacity: 0.4; }
 .camera-side { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 50%; border: none; background: rgb(255 255 255 / 0.15); color: #fff; font-size: 1.4rem; cursor: pointer; }
 span.camera-side { background: none; }
+.camera-flash { position: absolute; inset: 0; background: #fff; opacity: 0.7; pointer-events: none; }
+.camera-count { position: absolute; top: calc(16px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); padding: 8px 14px; border-radius: 999px; background: rgb(0 0 0 / 0.6); color: #fff; font: 0.9rem var(--mono); white-space: nowrap; }
+.camera-done { min-width: 72px; height: 48px; padding: 0 16px; border-radius: 999px; border: none; background: #fff; color: #000; font: 600 1rem var(--font); cursor: pointer; }

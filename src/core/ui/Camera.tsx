@@ -6,11 +6,14 @@ import { Icons } from './icons';
  * Calls onPhoto with the picture, or onUnavailable if the camera can't be used
  * (no camera, or permission refused) so the caller can fall back to the system picker.
  */
-export function Camera({ onPhoto, onClose, onUnavailable }: {
+export function Camera({ onPhoto, onClose, onUnavailable, taken }: {
   onPhoto: (file: File) => void;
   onClose: () => void;
   onUnavailable: () => void;
+  /** When set, the camera stays open after each photo (to take many) and shows how many were taken. */
+  taken?: number;
 }) {
+  const [flash, setFlash] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [facing, setFacing] = useState<'environment' | 'user'>('environment');
@@ -51,14 +54,22 @@ export function Camera({ onPhoto, onClose, onUnavailable }: {
     canvas.height = v.videoHeight;
     canvas.getContext('2d')!.drawImage(v, 0, 0);
     canvas.toBlob((b) => b && onPhoto(new File([b], 'photo.jpg', { type: 'image/jpeg' })), 'image/jpeg', 0.92);
+    setFlash(true);
+    setTimeout(() => setFlash(false), 180);
   };
 
   return (
     <div className="camera" role="dialog" aria-label="Camera">
       <video ref={videoRef} playsInline muted className={facing === 'user' ? 'mirrored' : ''} />
       {!ready && <div className="camera-wait">Opening the camera…</div>}
+      {flash && <div className="camera-flash" />}
+      {taken !== undefined && taken > 0 && <div className="camera-count">{taken} saved · details fill in by themselves</div>}
       <div className="camera-bar">
-        <button type="button" className="camera-side" onClick={onClose} aria-label="Close camera"><Icons.close /></button>
+        {taken !== undefined ? (
+          <button type="button" className="camera-done" onClick={onClose}>Done</button>
+        ) : (
+          <button type="button" className="camera-side" onClick={onClose} aria-label="Close camera"><Icons.close /></button>
+        )}
         <button type="button" className="shutter" onClick={shoot} disabled={!ready} aria-label="Take photo" />
         {canFlip ? (
           <button type="button" className="camera-side" onClick={() => setFacing((f) => (f === 'user' ? 'environment' : 'user'))} aria-label="Switch camera">⟲</button>

@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { subscribeHomes } from './data/homes';
 import { subscribeItems } from './data/items';
 import { subscribePeople } from './data/people';
+import { enqueueAutofill } from './ai/autofill';
+import { useAuth } from '../../core/auth/AuthProvider';
 import type { Home, Item } from './types';
 
 interface InventoryValue {
@@ -27,6 +29,8 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<Item[] | null>(null);
   const [error, setError] = useState('');
   const [people, setPeople] = useState<string[]>([]);
+  const { user } = useAuth();
+  const me = user?.displayName ?? user?.email ?? '';
 
   useEffect(() => {
     const offHomes = subscribeHomes(setHomes, (e) => setError(`loading homes: ${e.message}`));
@@ -34,6 +38,11 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     const offPeople = subscribePeople(setPeople, (e) => setError(`loading people: ${e.message}`));
     return () => { offHomes(); offItems(); offPeople(); };
   }, []);
+
+  // Items you quick-added whose details aren't filled in yet (e.g. the app was closed): continue now.
+  useEffect(() => {
+    items?.filter((it) => it.aiStatus === 'pending' && it.createdBy === me).forEach((it) => enqueueAutofill(it.id));
+  }, [items, me]);
 
   const value = useMemo<InventoryValue>(() => {
     const h = homes ?? [];

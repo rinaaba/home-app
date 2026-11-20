@@ -10,7 +10,7 @@ A family home app. Version 1 has one section: **Inventory** — what we own, and
 - People on the app's access list can invite friends, who get their own separate space
 - Gallery of items, filter by home, category, sub-category
 - Search across all homes, or ask the AI in plain words ("how many shirts do I have in Deal?")
-- Quick add: take a photo → AI guesses name, category, sub-category, color and notes → you confirm
+- Quick add: pick home and owner, then take or choose photos — each is saved instantly; the AI fills in name, category, sub-category, color and notes in the background (continues next time if the app was closed)
 - Each item gets one small product picture, made free on the device: the item is cut out of the photo (background removed) and centered on white; the photo itself is never kept
 - Pictures are optional (switch it off for socks): items without one show a color tile
 - Move an item to another home, edit, delete

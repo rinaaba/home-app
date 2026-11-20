@@ -103,7 +103,11 @@ export function ItemPage() {
             <HomeIcon home={homes.find((h) => h.id === item.homeId)} />
             {homeName(item.homeId)}
           </div>
-          <h1>{item.name}</h1>
+          <h1>{item.name || (item.aiStatus === 'pending' ? 'New item' : 'Untitled')}</h1>
+          {item.aiStatus === 'pending' && <p className="note">The AI is filling in the details. They’ll appear here by themselves.</p>}
+          {item.aiStatus === 'failed' && (
+            <p className="note">Couldn’t fill in the details automatically{item.aiError ? ` (${item.aiError})` : ''}. Tap Edit to add them.</p>
+          )}
           <dl>
             {rows.filter(([, v]) => v).map(([k, v]) => (
               <div key={k} className="dl-row">

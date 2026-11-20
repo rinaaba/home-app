@@ -1,4 +1,5 @@
 import {
+  getDoc,
   deleteDoc, doc, onSnapshot, serverTimestamp, setDoc, updateDoc, type DocumentData,
 } from 'firebase/firestore';
 import { currentFamily, fcol } from '../../../core/family/scope';
@@ -24,6 +25,8 @@ function fromDoc(id: string, d: DocumentData): Item {
     imageStatus: d.imageStatus ?? 'none',
     imageRequestedAt: d.imageRequestedAt ?? null,
     imageError: d.imageError ?? '',
+    aiStatus: d.aiStatus ?? 'done',
+    aiError: d.aiError ?? '',
     createdAt: d.createdAt ?? null,
     updatedAt: d.updatedAt ?? null,
     createdBy: d.createdBy ?? '',
@@ -84,4 +87,19 @@ export async function replaceItemImage(item: Item, picture: Blob) {
   const image = await saveImage(`families/${currentFamily()}/items/${item.id}/image`, picture);
   await updateItem(item.id, { image, imageKind: 'own', imageStatus: 'ready', imageError: '' });
   if (item.image) await deleteImage(item.image);
+}
+
+export async function getItem(id: string): Promise<Item | null> {
+  const snap = await getDoc(doc(itemsCol(), id));
+  return snap.exists() ? fromDoc(snap.id, snap.data()) : null;
+}
+
+/** Quick add: save the item right away with its picture; the AI fills in the details afterwards. */
+export async function createQuickItem(id: string, homeId: string, owner: string, image: StoredImage | null, createdBy: string) {
+  await setDoc(doc(itemsCol(), id), {
+    name: '', homeId, owner, category: '', subcategory: '', color: '', colorHex: '', notes: '',
+    image, imageKind: image ? 'photo' : null, imageStatus: image ? 'ready' : 'none', imageRequestedAt: null, imageError: '',
+    aiStatus: 'pending', aiError: '',
+    createdBy, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+  });
 }

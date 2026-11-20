@@ -3,313 +3,181 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../core/auth/AuthProvider';
 import { resizeImage } from '../../../core/images/resize';
 import { cropToItem } from '../../../core/images/crop';
-import { cutOutItem, prepareCutout } from '../../../core/images/cutout';
-import { aiPictures } from '../../../core/firebase/config';
-import { Spinner } from '../../../core/ui/Spinner';
 import { Camera } from '../../../core/ui/Camera';
 import { useToast } from '../../../core/ui/toast';
 import { useInventory } from '../InventoryContext';
-import { classifyPhoto, type Guess } from '../ai/classify';
-import { describeAiError } from '../../../core/ai/gemini';
-import { queueItemPicture } from '../ai/picture';
+import { enqueueAutofill, holdAutofill } from '../ai/autofill';
+import { HomeSwitch } from '../components/HomeSwitch';
 import { ItemForm } from '../components/ItemForm';
-import { createItem, newItemId, saveItemImage } from '../data/items';
-import type { ItemDetails } from '../types';
-import { homeStyle } from '../homeStyle';
+import { OwnerPicker } from '../components/OwnerPicker';
+import { createItem, createQuickItem, newItemId, saveItemImage } from '../data/items';
 import { galleryLink } from '../galleryMemory';
+import { homeStyle } from '../homeStyle';
+import type { ItemDetails } from '../types';
 
-const LAST_HOME_KEY = 'inventory.lastHomeId';
-const readLastHome = () => { try { return localStorage.getItem(LAST_HOME_KEY) ?? ''; } catch { return ''; } };
-const saveLastHome = (id: string) => { try { localStorage.setItem(LAST_HOME_KEY, id); } catch { /* ignore */ } };
+const remember = {
+  get: (key: string) => { try { return localStorage.getItem(key) ?? ''; } catch { return ''; } },
+  set: (key: string, v: string) => { try { localStorage.setItem(key, v); } catch { /* ignore */ } },
+};
+const LAST_HOME = 'inventory.lastHomeId';
+const LAST_OWNER = 'inventory.lastOwner';
 
-/** One photo waiting to become an item. Choosing one photo is just a list of one. */
-interface Entry {
-  file: File;
-  photo?: Blob;
-  preview?: string;
-  /** The small product view that will be saved (cropped to the item). */
-  thumb?: Blob;
-  thumbUrl?: string;
-  /** Both versions, so you can switch: the cut-out (background removed) and the plain crop. */
-  cut?: { blob: Blob; url: string } | null;
-  crop?: { blob: Blob; url: string };
-  guess?: Guess;
-  error?: string;
-  status: 'waiting' | 'looking' | 'ready' | 'failed' | 'unreadable';
-}
+interface Saved { id: string; photo: Blob }
 
-type Step = 'pick' | 'details';
-
+/**
+ * Quick add: pick the home and owner, then take or choose photos. Each photo is saved right away
+ * as an item; the AI fills in the details in the background (see ai/autofill.ts).
+ */
 export function AddItemPage() {
-  const { activeHomes, homes, defaultOwner } = useInventory();
+  const { activeHomes, homes, owners, defaultOwner } = useInventory();
   const { user } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
   const [params] = useSearchParams();
-  const cameraRef = useRef<HTMLInputElement>(null);
-  const [cameraOpen, setCameraOpen] = useState(false);
   const libraryRef = useRef<HTMLInputElement>(null);
-  const runRef = useRef(0); // bumps when starting over, to stop an old AI run
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const savingRef = useRef<Promise<Saved | null>[]>([]);
 
-  const defaultHome = () => {
-    const wanted = params.get('home') || readLastHome();
+  const pickHome = () => {
+    const wanted = params.get('home') || remember.get(LAST_HOME);
     return activeHomes.find((h) => h.id === wanted)?.id ?? activeHomes[0]?.id ?? '';
   };
-  const blank = (): ItemDetails => ({ name: '', homeId: defaultHome(), category: '', subcategory: '', color: '', colorHex: '', owner: defaultOwner, notes: '' });
+  const [homeId, setHomeId] = useState(pickHome);
+  const [owner, setOwner] = useState(() => (owners.includes(remember.get(LAST_OWNER)) ? remember.get(LAST_OWNER) : defaultOwner));
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [taken, setTaken] = useState(0);
+  const [busy, setBusy] = useState('');
+  const [manual, setManual] = useState(false);
+  const [details, setDetails] = useState<ItemDetails>({ name: '', homeId: '', category: '', subcategory: '', color: '', colorHex: '', owner: '', notes: '' });
 
-  const [step, setStep] = useState<Step>('pick');
-  const [queue, setQueue] = useState<Entry[]>([]);
-  const [index, setIndex] = useState(0);
-  const [formFor, setFormFor] = useState(-1); // which entry the form has been filled for
-  const [details, setDetails] = useState<ItemDetails>(blank);
-  const [keepPicture, setKeepPicture] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [savedNames, setSavedNames] = useState<string[]>([]);
+  // Homes and people may arrive after the page opens.
+  useEffect(() => { if (!homeId && activeHomes.length) setHomeId(pickHome()); }, [activeHomes]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!owners.includes(owner)) setOwner(defaultOwner); }, [owners]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Homes may arrive after the page opens.
-  useEffect(() => {
-    if (!details.homeId && activeHomes.length) setDetails((d) => ({ ...d, homeId: defaultHome() }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeHomes]);
+  const by = user?.displayName ?? user?.email ?? '';
+  const choose = (h: string, o: string) => { remember.set(LAST_HOME, h); remember.set(LAST_OWNER, o); };
 
-  // Free the photo previews when leaving the page.
-  const queueRef = useRef(queue);
-  queueRef.current = queue;
-  useEffect(() => () => queueRef.current.forEach((e) => [e.preview, e.cut?.url, e.crop?.url].forEach((u) => u && URL.revokeObjectURL(u))), []);
-
-  // Start downloading the cut-out model as soon as the add screen opens.
-  useEffect(() => prepareCutout(), []);
-
-  const patch = (i: number, changes: Partial<Entry>) =>
-    setQueue((q) => q.map((e, j) => (j === i ? { ...e, ...changes } : e)));
-
-  /** Let the AI look at the photos one after another, ahead of you. */
-  const lookAtAll = async (entries: Entry[], run: number) => {
-    for (let i = 0; i < entries.length; i++) {
-      if (runRef.current !== run) return;
-      patch(i, { status: 'looking' });
-      let photo: Blob;
-      try {
-        photo = await resizeImage(entries[i].file, 1024);
-      } catch {
-        patch(i, { status: 'unreadable' });
-        continue;
-      }
-      if (runRef.current !== run) return;
-      patch(i, { photo, preview: URL.createObjectURL(photo) });
-      // The AI guesses the details while the device cuts the item out of the background, at the same time.
-      // The cut-out never holds things up: the plain crop shows first, and the cut-out replaces it when ready.
-      const cutting = Promise.race([
-        cutOutItem(photo),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 20_000)), // give up after 20 seconds
-      ]).catch((e) => { console.warn('Cut-out failed', e); return null; });
-      const showCrop = async (box: number[] | undefined, changes: Partial<Entry>) => {
-        const cropBlob = await cropToItem(photo, box).catch(() => undefined);
-        const crop = cropBlob ? { blob: cropBlob, url: URL.createObjectURL(cropBlob) } : undefined;
-        if (runRef.current !== run) return;
-        // If the cut-out is already done, keep showing it; otherwise show the crop for now.
-        setQueue((q) => q.map((e, j) => (j !== i ? e : { ...e, ...changes, crop, ...(e.cut ? {} : { thumb: crop?.blob, thumbUrl: crop?.url }) })));
-      };
-      void cutting.then(async (cutBlob) => {
-        if (!cutBlob || runRef.current !== run) return;
-        const cut = { blob: cutBlob, url: URL.createObjectURL(cutBlob) };
-        // Switch to the cut-out, unless you already picked a picture yourself.
-        setQueue((q) => q.map((e, j) => (j !== i ? e : { ...e, cut, ...(e.thumb === e.crop?.blob || !e.thumb ? { thumb: cut.blob, thumbUrl: cut.url } : {}) })));
-      });
-      try {
-        const guess = await classifyPhoto(photo);
-        await showCrop(guess.box, { guess, status: 'ready' });
-      } catch (e) {
-        console.error(e);
-        await showCrop(undefined, { status: 'failed', error: describeAiError(e) });
-      }
+  /** Save one photo as an item right away; the details fill in later. */
+  const saveFile = async (file: File): Promise<Saved | null> => {
+    try {
+      const photo = await resizeImage(file, 1024);
+      const id = newItemId();
+      holdAutofill(id);
+      const picture = await cropToItem(photo, undefined); // the whole photo for now; the cut-out replaces it
+      await createQuickItem(id, homeId, owner, await saveItemImage(id, picture), by);
+      return { id, photo };
+    } catch (e) {
+      console.error('Could not save photo', e);
+      return null;
     }
   };
 
-  const onFiles = (files: FileList | File[] | null) => {
-    if (!files?.length) return;
-    const entries: Entry[] = [...files].map((file) => ({ file, status: 'waiting' }));
-    const run = ++runRef.current;
-    setQueue(entries);
-    setIndex(0);
-    setFormFor(-1);
-    setSavedNames([]);
-    setStep('details');
-    void lookAtAll(entries, run);
-  };
-
-  const current = queue[index] as Entry | undefined;
-  const isReady = !current || ['ready', 'failed', 'unreadable'].includes(current.status);
-
-  // When the AI is done with the current photo, fill the form. Home and owner carry over from the last item.
-  useEffect(() => {
-    if (!current || !isReady || formFor === index) return;
-    const g = current.guess;
-    setDetails((d) => ({
-      ...blank(),
-      homeId: d.homeId || defaultHome(),
-      owner: d.owner || defaultOwner,
-      ...(g && { name: g.name, category: g.category, subcategory: g.subcategory, color: g.color, colorHex: g.colorHex, notes: g.notes }),
-    }));
-    setKeepPicture(true);
-    setFormFor(index);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, isReady, index, formFor]);
-
-  /** All done: back to the gallery with a short message. */
-  const finish = (names: string[]) => {
-    runRef.current++;
-    if (names.length === 1) toast(`Saved “${names[0]}”`);
-    else if (names.length > 1) toast(`Saved ${names.length} items`);
+  /** Hand the saved items to the AI only once saving is done, so saving (and the camera) stay quick. */
+  const finish = (results: (Saved | null)[]) => {
+    results.forEach((r) => r && enqueueAutofill(r.id, r.photo));
+    const ok = results.filter(Boolean).length;
+    const failed = results.length - ok;
+    if (ok) toast(`Saved ${ok} ${ok === 1 ? 'item' : 'items'}. Details fill in by themselves.`);
+    if (failed) alert(`${failed} ${failed === 1 ? 'photo' : 'photos'} couldn’t be opened.`);
     navigate(galleryLink());
   };
 
-  const next = (names = savedNames) => {
-    if (index + 1 < queue.length) setIndex(index + 1);
-    else finish(names);
-    window.scrollTo({ top: 0 });
+  const onFiles = async (files: FileList | null) => {
+    if (!files?.length || !homeId) return;
+    choose(homeId, owner);
+    const list = [...files];
+    const results: (Saved | null)[] = [];
+    for (let i = 0; i < list.length; i++) {
+      setBusy(`Saving ${i + 1} of ${list.length}…`);
+      results.push(await saveFile(list[i]));
+    }
+    setBusy('');
+    finish(results);
   };
 
-  const save = async () => {
-    setSaving(true);
+  const onShot = (file: File) => {
+    setTaken((n) => n + 1);
+    savingRef.current.push(saveFile(file));
+  };
+
+  const closeCamera = async () => {
+    setCameraOpen(false);
+    if (!savingRef.current.length) return;
+    setBusy('Saving…');
+    const results = await Promise.all(savingRef.current);
+    savingRef.current = [];
+    setBusy('');
+    finish(results);
+  };
+
+  const saveManual = async () => {
+    setBusy('Saving…');
     try {
-      const id = newItemId();
-      const withPicture = current?.photo && keepPicture ? current.photo : null;
-      // The small product view (cropped to the item) is saved; it stays unless an AI picture replaces it.
-      const fallback = withPicture ? await saveItemImage(id, current?.thumb ?? withPicture) : null;
-      const clean: ItemDetails = { ...details, name: details.name.trim(), color: details.color.trim(), owner: details.owner.trim(), notes: details.notes.trim() };
-      await createItem(id, clean, fallback, user?.displayName ?? user?.email ?? '');
-      saveLastHome(clean.homeId);
-      // The photo itself is never kept. The AI picture is made in the background.
-      if (withPicture && aiPictures) queueItemPicture(id, clean.name, withPicture, fallback);
-      const names = [...savedNames, clean.name];
-      setSavedNames(names);
-      if (queue.length) next(names);
-      else finish(names);
+      const clean = { ...details, homeId, owner, name: details.name.trim(), color: details.color.trim(), notes: details.notes.trim() };
+      await createItem(newItemId(), clean, null, by);
+      choose(homeId, owner);
+      toast(`Saved “${clean.name}”`);
+      navigate(galleryLink());
     } catch (e) {
-      alert(`Couldn't save: ${(e as Error).message}`);
-    } finally {
-      setSaving(false);
+      alert(`Couldn’t save: ${(e as Error).message}`);
+      setBusy('');
     }
   };
 
-  const startOver = () => {
-    runRef.current++;
-    queue.forEach((e) => e.preview && URL.revokeObjectURL(e.preview));
-    setQueue([]);
-    setIndex(0);
-    setFormFor(-1);
-    setDetails((d) => ({ ...blank(), homeId: d.homeId, owner: d.owner }));
-    setStep('pick');
-  };
-
-  const looked = queue.filter((e) => !['waiting', 'looking'].includes(e.status)).length;
-  const many = queue.length > 1;
-
+  const accent = homeStyle(homes.find((h) => h.id === homeId)).accent;
   return (
-    <div className={`page narrow accent-${homeStyle(homes.find((h) => h.id === details.homeId)).accent}`}>
+    <div className={`page narrow accent-${accent}`}>
       <div className="page-head">
         <Link to={galleryLink()} className="btn link">← Back</Link>
-        <h1>{many && step === 'details' ? `Photo ${index + 1} of ${queue.length}` : 'Add item'}</h1>
+        <h1>Add items</h1>
       </div>
 
-      {/* Hidden file inputs. "capture" opens the camera directly on phones. */}
-      <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { onFiles(e.target.files); e.target.value = ''; }} />
-      <input ref={libraryRef} type="file" accept="image/*,.heic,.heif" multiple hidden onChange={(e) => { onFiles(e.target.files); e.target.value = ''; }} />
-
-      {activeHomes.length === 0 && (
-        <p className="note">First add a home in <Link to="/settings">settings</Link>, so your things have somewhere to go.</p>
-      )}
+      {/* Hidden inputs: the photo library (many at once), and the phone's own camera as a fallback. */}
+      <input ref={libraryRef} type="file" accept="image/*,.heic,.heif" multiple hidden onChange={(e) => { void onFiles(e.target.files); e.target.value = ''; }} />
+      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { void onFiles(e.target.files); e.target.value = ''; }} />
 
       {cameraOpen && (
         <Camera
-          onPhoto={(file) => { setCameraOpen(false); onFiles([file]); }}
-          onClose={() => setCameraOpen(false)}
-          // No camera access: use the phone's own camera screen instead.
-          onUnavailable={() => { setCameraOpen(false); cameraRef.current?.click(); }}
+          taken={taken}
+          onPhoto={onShot}
+          onClose={() => void closeCamera()}
+          onUnavailable={() => { setCameraOpen(false); cameraInputRef.current?.click(); }}
         />
       )}
 
-      {step === 'pick' && (
-        <div className="pick">
-          <button type="button" className="btn primary huge" onClick={() => setCameraOpen(true)}>📷 Take a photo</button>
-          <button type="button" className="btn huge" onClick={() => libraryRef.current?.click()}>🖼️ Choose photos</button>
-          <p className="muted center">You can choose many photos at once. The AI fills in each one and you check them one by one.</p>
-          <button type="button" className="btn link" onClick={() => { setQueue([]); setFormFor(-1); setStep('details'); }}>Add without a photo</button>
+      {activeHomes.length === 0 ? (
+        <p className="note">First add a home in <Link to="/settings">settings</Link>, so your things have somewhere to go.</p>
+      ) : (
+        <div className="form">
+          {!manual && (
+            <>
+              <div className="field">
+                <span className="label">Home</span>
+                <HomeSwitch homes={activeHomes} value={homeId} onChange={setHomeId} />
+              </div>
+              <OwnerPicker owners={owners} value={owner} onChange={setOwner} />
+            </>
+          )}
+
+          {busy ? (
+            <p className="note">{busy}</p>
+          ) : manual ? (
+            <ItemForm
+              value={{ ...details, homeId, owner }}
+              onChange={(v) => { setDetails(v); setHomeId(v.homeId); setOwner(v.owner); }}
+              onSubmit={() => void saveManual()}
+              submitLabel="Save item"
+            />
+          ) : (
+            <div className="pick">
+              <button type="button" className="btn primary huge" onClick={() => { choose(homeId, owner); setTaken(0); setCameraOpen(true); }}>📷 Take photos</button>
+              <button type="button" className="btn huge" onClick={() => libraryRef.current?.click()}>🖼️ Choose photos</button>
+              <p className="muted center">Each photo is saved right away. The AI fills in the details by itself in a minute; you can edit them anytime.</p>
+              <button type="button" className="btn link" onClick={() => setManual(true)}>Add without a photo</button>
+            </div>
+          )}
         </div>
       )}
-
-      {step === 'details' && (
-        <>
-          {many && (
-            <div className="progress">
-              <div className="progress-bar" style={{ width: `${(looked / queue.length) * 100}%` }} />
-              <span>AI has looked at {looked} of {queue.length} · {savedNames.length} saved</span>
-            </div>
-          )}
-
-          {current?.thumbUrl && keepPicture ? (
-            <div className="thumb-preview">
-              <img src={current.thumbUrl} alt="The picture that will be saved" />
-              <div className="thumb-side">
-                <span className="meta">This small picture is saved with the item. Your photo isn’t kept.</span>
-                {current.cut && current.crop && (
-                  <button
-                    type="button"
-                    className="link-btn small"
-                    onClick={() => {
-                      const useCut = current.thumb !== current.cut!.blob;
-                      const pick = useCut ? current.cut! : current.crop!;
-                      patch(index, { thumb: pick.blob, thumbUrl: pick.url });
-                    }}
-                  >
-                    {current.thumb === current.cut.blob ? 'use the photo’s background instead' : 'remove the background'}
-                  </button>
-                )}
-              </div>
-            </div>
-          ) : (
-            current?.preview && <img className="preview" src={current.preview} alt="Your photo" />
-          )}
-
-          {!isReady ? (
-            <Spinner label="Looking at your photo…" />
-          ) : current?.status === 'unreadable' ? (
-            <p className="error">This photo couldn’t be opened. Skip it, or try saving it as a JPEG first.</p>
-          ) : current?.status === 'failed' ? (
-            <p className="note">Couldn’t guess the details, so please fill them in.{current.error ? ` (${current.error})` : ''}</p>
-          ) : current ? (
-            <p className="note">These details were guessed from the photo. Check them and change anything that’s wrong.</p>
-          ) : null}
-
-          {current?.photo && (
-            <label className="switch-row">
-              <input type="checkbox" checked={keepPicture} onChange={(e) => setKeepPicture(e.target.checked)} />
-              <span>
-                Keep a picture of this item
-                <small className="muted">Off for things like socks: only the details and color are saved.</small>
-              </span>
-            </label>
-          )}
-
-          {current?.status !== 'unreadable' && (
-            <ItemForm
-              value={details}
-              onChange={setDetails}
-              onSubmit={save}
-              submitLabel={many && index + 1 < queue.length ? 'Save & next' : 'Save item'}
-              busy={saving}
-              disabled={!isReady}
-            />
-          )}
-
-          <div className="row spread">
-            {many && <button type="button" className="btn" onClick={() => next()} disabled={saving}>Skip this photo</button>}
-            <button type="button" className="btn link" onClick={startOver} disabled={saving}>{many ? 'Stop and start over' : 'Start over'}</button>
-          </div>
-        </>
-      )}
-
     </div>
   );
 }

@@ -42,6 +42,9 @@ export interface Item {
   imageStatus: ImageStatus;
   imageRequestedAt: Timestamp | null;
   imageError: string;
+  /** The AI filling in the details after a quick add: pending → done, or failed. */
+  aiStatus: 'pending' | 'done' | 'failed';
+  aiError: string;
   createdAt: Timestamp | null;
   updatedAt: Timestamp | null;
   createdBy: string;
