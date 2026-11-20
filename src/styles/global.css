@@ -390,9 +390,12 @@ span.camera-side { background: none; }
 
 /* Pictures take their home's pale color behind the item (light mode): white areas become the tint,
    the item keeps its own colors. In dark mode pictures stay as they are. */
+/* The whole card in its home's color, with an outline (light and dark). */
+.item-card.home-tint { background: var(--accent-soft); border: 1.5px solid var(--accent-border); }
+.item-card.home-tint .item-place { color: color-mix(in srgb, var(--accent) 75%, var(--muted)); }
 :root:not([data-theme='dark']) .home-tint .item-img-wrap,
 :root:not([data-theme='dark']) .item-page .item-photo img.item-img {
-  background: color-mix(in srgb, var(--accent-soft) 70%, #ffffff);
+  background: var(--accent-soft);
 }
 :root:not([data-theme='dark']) .home-tint .item-img-wrap img.item-img,
 :root:not([data-theme='dark']) .item-page .item-photo img.item-img {
