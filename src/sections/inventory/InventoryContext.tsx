@@ -3,6 +3,7 @@ import { subscribeHomes } from './data/homes';
 import { subscribeItems } from './data/items';
 import { subscribePeople } from './data/people';
 import { enqueueAutofill } from './ai/autofill';
+import { setCustomCategories } from './ai/classify';
 import { useAuth } from '../../core/auth/AuthProvider';
 import type { Home, Item } from './types';
 
@@ -38,6 +39,9 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     const offPeople = subscribePeople(setPeople, (e) => setError(`loading people: ${e.message}`));
     return () => { offHomes(); offItems(); offPeople(); };
   }, []);
+
+  // Let the AI also choose the categories the family added themselves.
+  useEffect(() => { if (items) setCustomCategories(items); }, [items]);
 
   // Items you quick-added whose details aren't filled in yet (e.g. the app was closed): continue now.
   useEffect(() => {

@@ -3,7 +3,7 @@
  * and you can always type your own in the form.
  */
 export const TAXONOMY: Record<string, string[]> = {
-  Clothing: ['T-shirt', 'Shirt', 'Sweater', 'Jacket', 'Coat', 'Pants', 'Jeans', 'Shorts', 'Dress', 'Skirt', 'Swimwear', 'Underwear', 'Socks', 'Pajamas', 'Sportswear'],
+  Clothing: ['T-shirt', 'Top', 'Shirt', 'Blouse', 'Sweater', 'Hoodie', 'Jacket', 'Coat', 'Pants', 'Jeans', 'Leggings', 'Shorts', 'Dress', 'Skirt', 'Swimwear', 'Underwear', 'Socks', 'Tights', 'Pajamas', 'Sportswear'],
   Shoes: ['Sneakers', 'Sandals', 'Boots', 'Dress shoes', 'Slippers', 'Flip-flops'],
   Accessories: ['Bag', 'Backpack', 'Hat', 'Scarf', 'Sunglasses', 'Belt', 'Jewelry', 'Watch'],
   Kitchen: ['Small appliance', 'Cookware', 'Bakeware', 'Utensils', 'Knives', 'Dishes', 'Glassware', 'Storage containers', 'Coffee and tea'],
