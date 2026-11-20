@@ -2,6 +2,7 @@ import { useId, type FormEvent } from 'react';
 import { useInventory } from '../InventoryContext';
 import { HomeSwitch } from './HomeSwitch';
 import { OwnerPicker } from './OwnerPicker';
+import { ChoiceField } from './ChoiceField';
 import { CATEGORIES, TAXONOMY } from '../taxonomy';
 import type { ItemDetails } from '../types';
 
@@ -15,12 +16,14 @@ interface Props {
 }
 
 export function ItemForm({ value, onChange, onSubmit, submitLabel, busy, disabled }: Props) {
-  const { activeHomes, homes, owners, categoriesInUse } = useInventory();
+  const { activeHomes, homes, owners, categoriesInUse, items } = useInventory();
   const id = useId();
   const set = <K extends keyof ItemDetails>(k: K, v: ItemDetails[K]) => onChange({ ...value, [k]: v });
 
   const categories = [...new Set([...CATEGORIES, ...categoriesInUse])];
-  const subcategories = TAXONOMY[value.category] ?? [];
+  // Sub-categories for a category: the standard ones plus any used before with that category.
+  const subsFor = (cat: string) => [...new Set([...(TAXONOMY[cat] ?? []), ...items.filter((i) => i.category === cat).map((i) => i.subcategory).filter(Boolean)])];
+  const subcategories = subsFor(value.category);
   // Keep an archived home selectable if the item is already in it.
   const homeOptions = homes.filter((h) => !h.archived || h.id === value.homeId);
 
@@ -44,16 +47,22 @@ export function ItemForm({ value, onChange, onSubmit, submitLabel, busy, disable
         </div>
 
         <div className="form-row">
-          <label>
-            Category
-            <input list={`${id}-cats`} value={value.category} onChange={(e) => set('category', e.target.value)} placeholder="e.g. Clothing" />
-            <datalist id={`${id}-cats`}>{categories.map((c) => <option key={c} value={c} />)}</datalist>
-          </label>
-          <label>
-            Sub-category
-            <input list={`${id}-subs`} value={value.subcategory} onChange={(e) => set('subcategory', e.target.value)} placeholder="e.g. T-shirt" />
-            <datalist id={`${id}-subs`}>{subcategories.map((c) => <option key={c} value={c} />)}</datalist>
-          </label>
+          <ChoiceField
+            label="Category"
+            value={value.category}
+            options={categories}
+            otherPlaceholder="New category"
+            // A new category usually means a different sub-category too.
+            onChange={(c) => onChange({ ...value, category: c, subcategory: subsFor(c).includes(value.subcategory) ? value.subcategory : '' })}
+          />
+          <ChoiceField
+            key={value.category}
+            label="Sub-category"
+            value={value.subcategory}
+            options={subcategories}
+            otherPlaceholder="New sub-category"
+            onChange={(v) => set('subcategory', v)}
+          />
         </div>
 
         <label>
