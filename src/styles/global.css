@@ -387,3 +387,14 @@ span.camera-side { background: none; }
 .menu-title { font-size: 1.2rem; font-weight: 600; }
 .menu-tile .meta { font-size: 0.75rem; }
 @media (max-width: 380px) { .menu-tiles { grid-template-columns: 1fr; } }
+
+/* Pictures take their home's pale color behind the item (light mode): white areas become the tint,
+   the item keeps its own colors. In dark mode pictures stay as they are. */
+:root:not([data-theme='dark']) .home-tint .item-img-wrap,
+:root:not([data-theme='dark']) .item-page .item-photo img.item-img {
+  background: color-mix(in srgb, var(--accent-soft) 70%, #ffffff);
+}
+:root:not([data-theme='dark']) .home-tint .item-img-wrap img.item-img,
+:root:not([data-theme='dark']) .item-page .item-photo img.item-img {
+  mix-blend-mode: multiply;
+}
