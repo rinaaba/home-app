@@ -98,22 +98,30 @@ export function AddItemPage() {
       if (runRef.current !== run) return;
       patch(i, { photo, preview: URL.createObjectURL(photo) });
       // The AI guesses the details while the device cuts the item out of the background, at the same time.
-      const cutting = cutOutItem(photo).catch((e) => { console.warn('Cut-out failed', e); return null; });
-      const pictures = async (box?: number[]) => {
-        const [cutBlob, cropBlob] = await Promise.all([cutting, cropToItem(photo, box).catch(() => undefined)]);
-        const cut = cutBlob ? { blob: cutBlob, url: URL.createObjectURL(cutBlob) } : null;
+      // The cut-out never holds things up: the plain crop shows first, and the cut-out replaces it when ready.
+      const cutting = Promise.race([
+        cutOutItem(photo),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 20_000)), // give up after 20 seconds
+      ]).catch((e) => { console.warn('Cut-out failed', e); return null; });
+      const showCrop = async (box: number[] | undefined, changes: Partial<Entry>) => {
+        const cropBlob = await cropToItem(photo, box).catch(() => undefined);
         const crop = cropBlob ? { blob: cropBlob, url: URL.createObjectURL(cropBlob) } : undefined;
-        const pick = cut ?? crop; // the cut-out if it worked, otherwise the plain crop
-        return { cut, crop, thumb: pick?.blob, thumbUrl: pick?.url };
+        if (runRef.current !== run) return;
+        // If the cut-out is already done, keep showing it; otherwise show the crop for now.
+        setQueue((q) => q.map((e, j) => (j !== i ? e : { ...e, ...changes, crop, ...(e.cut ? {} : { thumb: crop?.blob, thumbUrl: crop?.url }) })));
       };
+      void cutting.then(async (cutBlob) => {
+        if (!cutBlob || runRef.current !== run) return;
+        const cut = { blob: cutBlob, url: URL.createObjectURL(cutBlob) };
+        // Switch to the cut-out, unless you already picked a picture yourself.
+        setQueue((q) => q.map((e, j) => (j !== i ? e : { ...e, cut, ...(e.thumb === e.crop?.blob || !e.thumb ? { thumb: cut.blob, thumbUrl: cut.url } : {}) })));
+      });
       try {
         const guess = await classifyPhoto(photo);
-        const pics = await pictures(guess.box);
-        if (runRef.current === run) patch(i, { guess, ...pics, status: 'ready' });
+        await showCrop(guess.box, { guess, status: 'ready' });
       } catch (e) {
         console.error(e);
-        const pics = await pictures(undefined);
-        if (runRef.current === run) patch(i, { status: 'failed', error: describeAiError(e), ...pics });
+        await showCrop(undefined, { status: 'failed', error: describeAiError(e) });
       }
     }
   };
