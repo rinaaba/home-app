@@ -29,10 +29,10 @@ function FamilySettings() {
     try {
       await addMember(family.id, e, me);
       setEmail('');
-      toast(`Invited ${e}`);
+      toast(`Added ${e}`);
       shareInvite(e);
     } catch (err) {
-      alert(`Couldn’t invite: ${(err as Error).message}`);
+      alert(`Couldn’t add: ${(err as Error).message}`);
     } finally {
       setBusy(false);
     }
@@ -92,10 +92,10 @@ function FamilySettings() {
         </div>
 
         <form className="field" onSubmit={(e) => { e.preventDefault(); void invite(); }}>
-          <span className="label">Invite someone</span>
+          <span className="label">Add family member</span>
           <div className="inline-field">
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Their Gmail address" aria-label="Email to invite" />
-            <button type="submit" className="btn primary" disabled={!email.trim() || busy}>Invite</button>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Their Gmail address" aria-label="Family member’s email" />
+            <button type="submit" className="btn primary" disabled={!email.trim() || busy}>Add</button>
           </div>
         </form>
       </div>
