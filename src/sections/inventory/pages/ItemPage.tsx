@@ -89,7 +89,7 @@ function ItemEditor({ item }: { item: Item }) {
                 {item.image ? 'Replace picture' : 'Add picture'}
               </button>
             )}
-            {item.image && !working && <button type="button" className="btn small" onClick={() => setCropping(true)}>Crop picture</button>}
+            {item.image && !working && <button type="button" className="btn small" onClick={() => setCropping(true)}>Edit picture</button>}
             {item.image && !working && <button type="button" className="btn small" onClick={removePicture}>Remove picture</button>}
             <input ref={fileRef} type="file" accept="image/*,.heic,.heif" hidden onChange={(e) => { void replacePicture(e.target.files?.[0]); e.target.value = ''; }} />
           </div>
@@ -102,7 +102,7 @@ function ItemEditor({ item }: { item: Item }) {
                 setCropping(false);
                 setWorking(true);
                 replaceItemImage(item, blob)
-                  .then(() => toast('Picture cropped'))
+                  .then(() => toast('Picture saved'))
                   .catch((e) => alert(`Couldn’t save the crop: ${e.message}`))
                   .finally(() => setWorking(false));
               }}
