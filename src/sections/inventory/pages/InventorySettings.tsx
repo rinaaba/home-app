@@ -6,7 +6,8 @@ import { savePeople } from '../data/people';
 import { ACCENTS, HomeStylePicker, homeStyle } from '../homeStyle';
 import type { Home } from '../types';
 import { DeleteHomeDialog } from '../components/DeleteHomeDialog';
-import { isCutoutOn, setCutoutOn } from '../ai/autofill';
+import { autofillStatus, enqueueAutofill, isCutoutOn, onAutofillChange, restartAutofill, setCutoutOn } from '../ai/autofill';
+import { useEffect } from 'react';
 
 function HomeRow({ home, count, onUp, onDown }: { home: Home; count: number; onUp?: () => void; onDown?: () => void }) {
   const style = homeStyle(home);
@@ -100,12 +101,41 @@ function People() {
   );
 }
 
+/** What the AI fill-in is doing on this device, with a Restart button if it seems stuck. */
+function AutofillStatus() {
+  const { items } = useInventory();
+  const [st, setSt] = useState(autofillStatus);
+  const [open, setOpen] = useState(false);
+  useEffect(() => onAutofillChange(() => setSt(autofillStatus())), []);
+  const pending = items.filter((i) => i.aiStatus === 'pending').length;
+  const failed = items.filter((i) => i.aiStatus === 'failed').length;
+  const restart = () => {
+    restartAutofill();
+    items.filter((i) => i.aiStatus === 'pending').forEach((i) => enqueueAutofill(i.id));
+  };
+  return (
+    <div className="card autofill-status">
+      <div className="usage-row"><span>AI fill-in</span><span className="usage-num">{pending} waiting · {failed} failed</span></div>
+      <p className="meta">
+        On this device: {st.waiting ? `${st.waiting} in line${st.step ? `, now ${st.step}` : ''}` : 'nothing in line'}.
+        {st.lastError ? ` Last problem: ${st.lastError}` : ''}
+      </p>
+      <div className="row">
+        <button type="button" className="btn small" onClick={restart}>Restart</button>
+        <button type="button" className="link-btn small" onClick={() => setOpen((o) => !o)}>{open ? 'hide details' : 'show details'}</button>
+      </div>
+      {open && <pre className="status-log">{st.log.join('\n') || 'No activity yet.'}</pre>}
+    </div>
+  );
+}
+
 /** Background removal runs on each device; it turns itself off if it ever made the app close. */
 function CutoutSetting() {
   const [on, setOn] = useState(isCutoutOn);
   return (
     <>
       <h2>Pictures</h2>
+      <AutofillStatus />
       <label className="switch-row">
         <input type="checkbox" checked={on} onChange={(e) => { setCutoutOn(e.target.checked); setOn(e.target.checked); }} />
         <span>

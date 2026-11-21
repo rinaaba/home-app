@@ -258,6 +258,8 @@ code { font-family: var(--mono); background: var(--card); padding: 1px 6px; bord
 .square-btn:disabled { opacity: 0.35; cursor: default; }
 
 /* Settings */
+.autofill-status { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.status-log { margin: 0; padding: 10px; max-height: 220px; overflow: auto; border-radius: var(--radius-sm); background: var(--input); font: 0.72rem/1.5 var(--mono); white-space: pre-wrap; color: var(--muted); }
 .style-picker { display: flex; flex-direction: column; gap: 8px; }
 .icon-grid { display: flex; flex-wrap: wrap; gap: 8px; }
 .icon-choice { display: grid; place-items: center; width: 52px; height: 52px; padding: 0; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--card); color: var(--muted); font: 0.78rem var(--font); cursor: pointer; }

@@ -48,7 +48,9 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   const [tick, setTick] = useState(0);
   useEffect(() => { const t = setInterval(() => setTick((n) => n + 1), 60_000); return () => clearInterval(t); }, []);
   useEffect(() => {
-    const mine = items?.filter((it) => it.createdBy === me) ?? [];
+    // Items added on this device, or waiting more than 5 minutes anywhere (e.g. added on a laptop that was then closed).
+    const stale = Date.now() - 5 * 60_000;
+    const mine = items?.filter((it) => it.createdBy === me || (it.updatedAt?.toMillis() ?? 0) < stale) ?? [];
     mine.filter((it) => it.aiStatus === 'pending').forEach((it) => enqueueAutofill(it.id));
     // (Up to 3 automatic retries; items that failed before retries existed get one too.)
     mine.filter((it) => it.aiStatus === 'failed' && it.aiAttempts <= 3 && it.aiRetryAt <= Date.now()).forEach((it) => void retryAutofill(it.id));

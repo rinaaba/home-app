@@ -12,9 +12,21 @@ import { classifyPhoto } from './classify';
  */
 const photos = new Map<string, Blob>(); // the full photos taken in this session (better than the saved small picture)
 const queued = new Set<string>();
-let chain: Promise<void> = Promise.resolve();
+let waiting: string[] = [];
+let generation = 0; // bumps on restart, so a stuck run stops by itself
+let running = false;
 const listeners = new Set<() => void>();
 const RETRY_MINUTES = [2, 10, 60];
+
+/** What's happening, for the status panel in Settings. */
+const status = { current: '', step: '', lastError: '', log: [] as string[] };
+function note(step: string, itemId = status.current) {
+  status.step = step;
+  const t = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  status.log = [`${t} · ${itemId ? itemId.slice(0, 5) + ' · ' : ''}${step}`, ...status.log].slice(0, 30);
+  listeners.forEach((l) => l());
+}
+export const autofillStatus = () => ({ ...status, waiting: queued.size });
 
 /** Try filling in an item again (automatically after a failure, or when you tap "Try again"). */
 export async function retryAutofill(itemId: string, fromScratch = false) {
@@ -37,8 +49,36 @@ export function enqueueAutofill(itemId: string, photo?: Blob) {
   if (photo) { photos.set(itemId, photo); held.delete(itemId); }
   if (held.has(itemId) || queued.has(itemId)) return;
   queued.add(itemId);
-  listeners.forEach((l) => l());
-  chain = chain.then(() => fill(itemId)).catch(() => undefined);
+  waiting.push(itemId);
+  note('waiting in line', itemId);
+  void work();
+}
+
+/** Clear the line and start over (the status panel's Restart button). Waiting items are picked up again. */
+export function restartAutofill() {
+  generation++;
+  running = false;
+  waiting = [];
+  queued.clear();
+  held.clear();
+  status.current = '';
+  note('restarted', '');
+}
+
+/** Works through the line one item at a time. */
+async function work() {
+  if (running) return;
+  running = true;
+  const gen = generation;
+  try {
+    while (waiting.length && gen === generation) {
+      const id = waiting.shift()!;
+      status.current = id;
+      await fill(id);
+    }
+  } finally {
+    if (gen === generation) { running = false; status.current = ''; listeners.forEach((l) => l()); }
+  }
 }
 
 /** How many items are still waiting to be filled in on this device. */
@@ -74,7 +114,11 @@ const ITEM_TIME_LIMIT = 3 * 60_000;
 async function fill(id: string) {
   try {
     const finished = await withTimeout(fillOne(id).then(() => true), ITEM_TIME_LIMIT);
-    if (!finished) await markFailed(id, new Error('The AI took too long to answer'));
+    if (!finished) {
+      status.lastError = 'took longer than 3 minutes';
+      note('gave up after 3 minutes (will retry)');
+      await withTimeout(markFailed(id, new Error('The AI took too long to answer')), 20_000);
+    }
   } finally {
     photos.delete(id);
     queued.delete(id);
@@ -97,8 +141,9 @@ async function markFailed(id: string, e: unknown) {
 }
 
 async function fillOne(id: string) {
+  note('reading the item', id);
   const item = await getItem(id);
-  if (!item || item.aiStatus !== 'pending') return;
+  if (!item || item.aiStatus !== 'pending') { note('already done'); return; }
   const photo = photos.get(id) ?? (item.image ? await loadImageBlob(item.image).catch(() => null) : null);
   if (!photo) {
     await updateItem(id, { aiStatus: 'failed', aiError: 'No picture to look at.', aiAttempts: 99, aiRetryAt: 0 });
@@ -108,7 +153,9 @@ async function fillOne(id: string) {
   // 1. The details first, so they never wait on the picture.
   let box: number[] | undefined;
   try {
+    note('asking the AI');
     const g = await classifyPhoto(photo);
+    note('saving the details');
     box = g.box;
     // Fill in only what's still empty, in case someone edited the item meanwhile.
     const now = (await getItem(id)) ?? item;
@@ -125,13 +172,17 @@ async function fillOne(id: string) {
       aiAttempts: 0,
       aiRetryAt: 0,
     });
+    note('details saved');
   } catch (e) {
+    status.lastError = describeAiError(e);
+    note(`AI failed: ${status.lastError}`);
     await markFailed(id, e);
   }
 
   // 2. Then a better picture: the cut-out (if this device handles it), or else a crop around the item.
   let picture: Blob | null = null;
   if (cutoutAllowed()) {
+    note('removing the background');
     store.set(CUTOUT_RUNNING, id);
     picture = await withTimeout(cutOutItem(photo).catch(() => null), 30_000);
     store.del(CUTOUT_RUNNING);
@@ -143,4 +194,5 @@ async function fillOne(id: string) {
     await updateItem(id, { image });
     if (latest.image) await deleteImage(latest.image);
   }
+  note('done');
 }
