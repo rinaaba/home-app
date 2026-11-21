@@ -59,10 +59,10 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
         <form className="card signin welcome" onSubmit={(e) => { e.preventDefault(); void create(); }}>
           <img src="icons/icon.svg" alt="" width={64} height={64} />
           <h1>Welcome</h1>
-          <p>Create a space for your family. Only people you invite will see what’s in it.</p>
+          <p>Name your family’s space.</p>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. The Cohen family" aria-label="Family name" autoFocus />
           <button type="submit" className="btn primary big" disabled={!name.trim() || creating}>{creating ? 'Creating…' : 'Create our space'}</button>
-          <p className="meta">Joining someone else’s family? Ask them to invite {email} in Settings (⚙), then reload.</p>
+          <p className="meta">Joining a family? Ask them to invite {email}.</p>
           <button type="button" className="link-btn" onClick={signOut}>use another account</button>
         </form>
       </div>

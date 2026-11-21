@@ -156,7 +156,7 @@ export function GalleryPage() {
       {error && <div className="error">Something went wrong: {error}</div>}
       {fillingCount > 0 && (
         <div className="filling-line" role="status">
-          <span className="spinner small" /> The AI is filling in {fillingCount} {fillingCount === 1 ? 'item' : 'items'}… you can keep using the app.
+          <span className="spinner small" /> Filling in {fillingCount} {fillingCount === 1 ? 'item' : 'items'}…
         </div>
       )}
 
@@ -164,8 +164,7 @@ export function GalleryPage() {
         <Spinner label="Loading items" />
       ) : homes.length === 0 ? (
         <div className="card start-card">
-          <h2>Welcome! Start by adding your homes</h2>
-          <p className="meta">For example your main home and a holiday home. Then add your things to each one.</p>
+          <h2>Start by adding your homes</h2>
           <Link to="/settings" className="btn primary big">Add homes</Link>
         </div>
       ) : (
@@ -189,7 +188,7 @@ export function GalleryPage() {
             ))}
           </div>
           {sorted.length === 0 && (
-            <p className="empty">{aiIds ? 'No matching items.' : q ? `No exact matches for “${q}”. Try Ask AI.` : items.length === 0 ? 'No items yet. Add your first one.' : 'No items match these filters.'}</p>
+            <p className="empty">{aiIds ? 'No matching items.' : q ? `Nothing found. Try Ask AI.` : items.length === 0 ? 'No items yet. Add your first one.' : 'No items match these filters.'}</p>
           )}
         </>
       )}

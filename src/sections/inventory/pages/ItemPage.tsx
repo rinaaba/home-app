@@ -111,12 +111,11 @@ function ItemEditor({ item }: { item: Item }) {
         </div>
 
         <div className="item-info">
-          {item.aiStatus === 'pending' && <p className="note">The AI is filling in the details. They’ll appear here by themselves.</p>}
+          {item.aiStatus === 'pending' && <p className="note">Filling in…</p>}
           {item.aiStatus === 'failed' && (
-            <div className="note">
-              Couldn’t fill in the details automatically{item.aiError ? ` (${item.aiError})` : ''}.
-              {item.aiRetryAt > Date.now() ? ' It will try again by itself in a few minutes. ' : ' '}
-              <button type="button" className="link-btn" onClick={() => void retryAutofill(item.id, true)}>try again now</button>
+            <div className="note row spread">
+              <span>Couldn’t fill in the details.</span>
+              <button type="button" className="btn small" onClick={() => void retryAutofill(item.id, true)}>Try again</button>
             </div>
           )}
           <ItemForm

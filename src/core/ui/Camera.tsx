@@ -63,7 +63,7 @@ export function Camera({ onPhoto, onClose, onUnavailable, taken }: {
       <video ref={videoRef} playsInline muted className={facing === 'user' ? 'mirrored' : ''} />
       {!ready && <div className="camera-wait">Opening the camera…</div>}
       {flash && <div className="camera-flash" />}
-      {taken !== undefined && taken > 0 && <div className="camera-count">{taken} saved · details fill in by themselves</div>}
+      {taken !== undefined && taken > 0 && <div className="camera-count">{taken} saved</div>}
       <div className="camera-bar">
         {taken !== undefined ? (
           <button type="button" className="camera-done" onClick={onClose}>Done</button>

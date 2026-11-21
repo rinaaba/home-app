@@ -77,7 +77,7 @@ export function AddItemPage() {
     results.forEach((r) => r && enqueueAutofill(r.id, r.photo));
     const ok = results.filter(Boolean).length;
     const failed = results.length - ok;
-    if (ok) toast(`Saved ${ok} ${ok === 1 ? 'item' : 'items'}. Details fill in by themselves.`);
+    if (ok) toast(`Saved ${ok} ${ok === 1 ? 'item' : 'items'}`);
     if (failed) alert(`${failed} ${failed === 1 ? 'photo' : 'photos'} couldn’t be opened.`);
     navigate(galleryLink());
   };
@@ -172,7 +172,6 @@ export function AddItemPage() {
             <div className="pick">
               <button type="button" className="btn primary huge" onClick={() => { choose(homeId, owner); setTaken(0); setCameraOpen(true); }}>📷 Take photos</button>
               <button type="button" className="btn huge" onClick={() => libraryRef.current?.click()}>🖼️ Choose photos</button>
-              <p className="muted center">Each photo is saved right away. The AI fills in the details by itself in a minute; you can edit them anytime.</p>
               <button type="button" className="btn link" onClick={() => setManual(true)}>Add without a photo</button>
             </div>
           )}

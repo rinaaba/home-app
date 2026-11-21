@@ -17,7 +17,6 @@ export function HomeMenu() {
           <a key={a.url} href={a.url} className="menu-tile" target="_blank" rel="noreferrer">
             <span className="menu-icon">{a.icon}</span>
             <span className="menu-title">{a.title}</span>
-            <span className="meta">{a.note} · opens separately for now</span>
           </a>
         ))}
       </div>

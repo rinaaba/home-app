@@ -97,7 +97,6 @@ function FamilySettings() {
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Their Gmail address" aria-label="Email to invite" />
             <button type="submit" className="btn primary" disabled={!email.trim() || busy}>Invite</button>
           </div>
-          <span className="meta">They sign in with that Google account and see this family’s things. Invite people you live with or share homes with.</span>
         </form>
       </div>
     </section>
@@ -113,6 +112,7 @@ function AiUsage() {
   useEffect(() => { void getDailyLimit(family.id).then(setLimit); }, [family.id]);
   const limited = limit !== null && Number.isFinite(limit);
 
+  if (!limited) return null; // only families with a daily limit need to see this
   return (
     <section className="settings-section">
       <h2>AI use</h2>
@@ -122,11 +122,6 @@ function AiUsage() {
           <span className="usage-num">{today}{limited ? ` of ${limit}` : ''} AI requests</span>
         </div>
         {limited && <div className="usage-bar"><div style={{ width: `${Math.min(100, limit ? (today / limit) * 100 : 100)}%` }} /></div>}
-        <p className="meta">
-          {limit !== null && !limited
-            ? 'Your family has no daily limit.'
-            : 'Adding a photo uses 1–2 requests; asking a question uses 1. The count resets every day.'}
-        </p>
       </div>
     </section>
   );
@@ -165,7 +160,7 @@ function InviteFriend() {
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Their Gmail address" aria-label="Friend’s email" />
           <button type="submit" className="btn primary" disabled={!email.trim()}>Invite</button>
         </div>
-        <span className="meta">They get their own, empty space with their own homes and people. They can’t see your things, and you can’t see theirs. They can use the AI up to 50 times a day, so they can’t use up your allowance.</span>
+        <span className="meta">They get their own separate space.</span>
       </form>
     </section>
   );
@@ -200,9 +195,6 @@ export function SettingsPage() {
       {sections.map((s) => (s.Settings ? <s.Settings key={s.id} /> : null))}
       <AiUsage />
       <InviteFriend />
-      <p className="meta center app-link">
-        <Icons.house /> Share the app: {APP_URL}
-      </p>
       <VersionLine />
     </div>
   );

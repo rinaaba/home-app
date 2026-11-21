@@ -6,8 +6,7 @@ import { savePeople } from '../data/people';
 import { ACCENTS, HomeStylePicker, homeStyle } from '../homeStyle';
 import type { Home } from '../types';
 import { DeleteHomeDialog } from '../components/DeleteHomeDialog';
-import { autofillStatus, enqueueAutofill, isCutoutOn, onAutofillChange, restartAutofill, setCutoutOn } from '../ai/autofill';
-import { useEffect } from 'react';
+import { isCutoutOn, restartAutofill, retryAutofill, setCutoutOn } from '../ai/autofill';
 
 function HomeRow({ home, count, onUp, onDown }: { home: Home; count: number; onUp?: () => void; onDown?: () => void }) {
   const style = homeStyle(home);
@@ -84,7 +83,6 @@ function People() {
   return (
     <>
       <h2>People</h2>
-      <p className="meta">Who items can belong to. “All” is picked for new items.</p>
       <div className="chips people">
         {owners.map((o) => (
           <span key={o} className="chip person">
@@ -101,47 +99,32 @@ function People() {
   );
 }
 
-/** What the AI fill-in is doing on this device, with a Restart button if it seems stuck. */
-function AutofillStatus() {
+/** Items whose details couldn't be filled in, with one button to try them all again. */
+function RetryFailed() {
   const { items } = useInventory();
-  const [st, setSt] = useState(autofillStatus);
-  const [open, setOpen] = useState(false);
-  useEffect(() => onAutofillChange(() => setSt(autofillStatus())), []);
-  const pending = items.filter((i) => i.aiStatus === 'pending').length;
-  const failed = items.filter((i) => i.aiStatus === 'failed').length;
-  const restart = () => {
+  const stuck = items.filter((i) => i.aiStatus === 'failed' || i.aiStatus === 'pending');
+  if (!stuck.length) return null;
+  const retry = () => {
     restartAutofill();
-    items.filter((i) => i.aiStatus === 'pending').forEach((i) => enqueueAutofill(i.id));
+    stuck.forEach((i) => void retryAutofill(i.id, true));
   };
   return (
-    <div className="card autofill-status">
-      <div className="usage-row"><span>AI fill-in</span><span className="usage-num">{pending} waiting · {failed} failed</span></div>
-      <p className="meta">
-        On this device: {st.waiting ? `${st.waiting} in line${st.step ? `, now ${st.step}` : ''}` : 'nothing in line'}.
-        {st.lastError ? ` Last problem: ${st.lastError}` : ''}
-      </p>
-      <div className="row">
-        <button type="button" className="btn small" onClick={restart}>Restart</button>
-        <button type="button" className="link-btn small" onClick={() => setOpen((o) => !o)}>{open ? 'hide details' : 'show details'}</button>
-      </div>
-      {open && <pre className="status-log">{st.log.join('\n') || 'No activity yet.'}</pre>}
+    <div className="card usage-row">
+      <span>{stuck.length} {stuck.length === 1 ? 'item needs' : 'items need'} details</span>
+      <button type="button" className="btn small primary" onClick={retry}>Retry</button>
     </div>
   );
 }
 
-/** Background removal runs on each device; it turns itself off if it ever made the app close. */
 function CutoutSetting() {
   const [on, setOn] = useState(isCutoutOn);
   return (
     <>
       <h2>Pictures</h2>
-      <AutofillStatus />
+      <RetryFailed />
       <label className="switch-row">
         <input type="checkbox" checked={on} onChange={(e) => { setCutoutOn(e.target.checked); setOn(e.target.checked); }} />
-        <span>
-          Remove backgrounds on this device
-          <small className="muted">Makes clean product pictures. If it ever made the app close, it turns itself off; turn it on here to try again.</small>
-        </span>
+        <span>Remove backgrounds</span>
       </label>
     </>
   );
@@ -179,7 +162,6 @@ export function InventorySettings() {
   return (
     <section className="settings-section">
       <h2>Homes</h2>
-      <p className="meta">The first home is listed first and is picked for new items. Use the arrows to change the order.</p>
       <ul className="card-list">
         {active.map((h, i) => (
           <HomeRow
@@ -220,7 +202,6 @@ export function InventorySettings() {
           </button>
           {showArchived && (
             <>
-              <p className="meta">Archived homes are hidden from filters and pickers. Their items are kept and still show up in search.</p>
               <ul className="card-list">{archived.map((h) => <HomeRow key={h.id} home={h} count={countFor(h.id)} />)}</ul>
             </>
           )}
