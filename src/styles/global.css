@@ -258,6 +258,7 @@ code { font-family: var(--mono); background: var(--card); padding: 1px 6px; bord
 .square-btn:disabled { opacity: 0.35; cursor: default; }
 
 /* Settings */
+.sign-out { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid var(--border); }
 .autofill-status { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
 .status-log { margin: 0; padding: 10px; max-height: 220px; overflow: auto; border-radius: var(--radius-sm); background: var(--input); font: 0.72rem/1.5 var(--mono); white-space: pre-wrap; color: var(--muted); }
 .style-picker { display: flex; flex-direction: column; gap: 8px; }

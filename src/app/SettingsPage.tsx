@@ -166,6 +166,16 @@ function InviteFriend() {
   );
 }
 
+function SignOut() {
+  const { user, signOut } = useAuth();
+  return (
+    <section className="settings-section sign-out">
+      <span className="meta">Signed in as {user?.email}</span>
+      <button type="button" className="btn" onClick={() => void signOut()}>Sign out</button>
+    </section>
+  );
+}
+
 function VersionLine() {
   const [state, setState] = useState<'idle' | 'checking' | 'latest' | 'offline'>('idle');
   const check = async () => {
@@ -195,6 +205,7 @@ export function SettingsPage() {
       {sections.map((s) => (s.Settings ? <s.Settings key={s.id} /> : null))}
       <AiUsage />
       <InviteFriend />
+      <SignOut />
       <VersionLine />
     </div>
   );
